@@ -1,0 +1,36 @@
+import { Route, Router, Switch } from 'wouter'
+import { useHashLocation } from 'wouter/use-hash-location'
+
+import KanbanBoard from './pages/kanban-board'
+import Home from './pages/home'
+import NotFound from './pages/not-found'
+import ValidateClauseSet from './pages/validate-clause-set'
+import ValidateClauseSetOption2 from './pages/validate-clause-set-option-2'
+import ValidateClauseSetEmpty from './pages/validate-clause-set-empty'
+import AiClauseSelection from './pages/ai-clause-selection'
+
+const pages = [
+  { path: '/', title: 'Kanban Board', component: KanbanBoard },
+  { path: '/home', title: 'Home', component: Home },
+  { path: '/validate-clause-set', title: 'Validate Clause Set (Option 1)', component: ValidateClauseSet },
+  { path: '/validate-clause-set-option-2', title: 'Validate Clause Set (Option 2)', component: ValidateClauseSetOption2 },
+  { path: '/validate-clause-set-empty', title: 'Validate Clause Set (Empty States)', component: ValidateClauseSetEmpty },
+  { path: '/ai-clause-selection', title: 'AI Clause Selection', component: AiClauseSelection },
+]
+
+function App() {
+  return (
+    <Router hook={useHashLocation}>
+      <div className="min-h-screen bg-gray-50">
+        <Switch>
+          {pages.map(({ path, component: Component }) => (
+            <Route key={path} path={path} component={Component} />
+          ))}
+          <Route component={NotFound} />
+        </Switch>
+      </div>
+    </Router>
+  )
+}
+
+export default App
