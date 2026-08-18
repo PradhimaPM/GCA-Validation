@@ -421,7 +421,7 @@ function ClauseSection({
                 : 'text-[#6C6C75] cursor-not-allowed'
             }`}
           >
-           (Clear all)
+            Clear all
           </button>
         </div>
       </div>
@@ -484,18 +484,17 @@ function ClauseSection({
                     />
                     <span>Reject</span>
                   </label>
-                  <button
-                    type="button"
-                    onClick={() => onActionClear(row.id)}
-                    disabled={!row.action}
-                    className={`text-sm ${
-                      row.action
-                        ? 'text-[#2322F0] hover:underline cursor-pointer'
-                        : 'text-[#6C6C75] cursor-not-allowed'
-                    }`}
-                  >
-                    Clear
-                  </button>
+                  {row.action ? (
+                    <button
+                      type="button"
+                      onClick={() => onActionClear(row.id)}
+                      className="text-sm text-[#2322F0] hover:underline cursor-pointer"
+                    >
+                      Clear
+                    </button>
+                  ) : (
+                    <span />
+                  )}
                 </div>
               </td>
             </tr>
@@ -565,7 +564,7 @@ function DateCompare({ existing, next }: { existing: string; next: string }) {
   }
   return (
     <div className="flex items-center gap-1.5 text-[#222222] whitespace-nowrap">
-      <span className="line-through">{existing}</span>
+      <span>{existing}</span>
       <ArrowRight size={14} className="flex-shrink-0" />
       <span className="font-semibold">{next}</span>
     </div>
@@ -609,18 +608,17 @@ function ReviewRow({ review, onActionChange, onActionClear }: ReviewRowProps) {
             />
             <span>Update</span>
           </label>
-          <button
-            type="button"
-            onClick={() => onActionClear(review.id)}
-            disabled={!review.action}
-            className={`text-sm ${
-              review.action
-                ? 'text-[#2322F0] hover:underline cursor-pointer'
-                : 'text-[#6C6C75] cursor-not-allowed'
-            }`}
-          >
-            Clear
-          </button>
+          {review.action ? (
+            <button
+              type="button"
+              onClick={() => onActionClear(review.id)}
+              className="text-sm text-[#2322F0] hover:underline cursor-pointer"
+            >
+              Clear
+            </button>
+          ) : (
+            <span />
+          )}
         </div>
       </td>
     </tr>
