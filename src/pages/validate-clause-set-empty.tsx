@@ -59,13 +59,13 @@ export default function ValidateClauseSetEmpty() {
                 <EmptyClauseTable
                   title="INCLUSIONS"
                   sourceLabel="Recommended by"
-                  message="No clauses to include — all recommended inclusions are up to date."
+                  message="No clauses to include. Clause set is up to date."
                 />
 
                 <EmptyClauseTable
                   title="EXCLUSIONS"
                   sourceLabel="Added through"
-                  message="No clauses to exclude — all recommended exclusions are up to date."
+                  message="No clauses to exclude. Clause set is up to date."
                 />
               </div>
             </div>
@@ -82,7 +82,7 @@ export default function ValidateClauseSetEmpty() {
                 />
               </div>
               <div className="px-6 py-5">
-                <EmptyReviewTable message="All clauses are up to date. Nothing to review." />
+                <EmptyReviewTable message="All clauses are the latest version." />
               </div>
             </div>
 
@@ -98,7 +98,7 @@ export default function ValidateClauseSetEmpty() {
                 />
               </div>
               <div className="px-6 py-5">
-                <EmptyIncompleteTable message="No incomplete clauses found. All clauses have the required information." />
+                <EmptyIncompleteTable message="No incomplete clauses." />
               </div>
             </div>
           </div>

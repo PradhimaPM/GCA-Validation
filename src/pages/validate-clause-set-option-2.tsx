@@ -6,6 +6,7 @@ import {
   ButtonWidget,
   RichTextDisplayField,
   TextItem,
+  TagField,
 } from '@pglevy/sailwind'
 import { X, Info, AlertTriangle, ArrowRight, ExternalLink } from 'lucide-react'
 import {
@@ -98,7 +99,7 @@ export default function ValidateClauseSetOption2() {
   }
 
   const tabs: { id: TabId; label: string; count: number }[] = [
-    { id: 'compliance', label: 'Clause Compliance', count: clauses.length },
+    { id: 'compliance', label: 'Recommendation', count: clauses.length },
     { id: 'updates', label: 'Updates', count: reviews.length },
     { id: 'errors', label: 'Errors', count: incomplete.length },
   ]
@@ -159,7 +160,7 @@ export default function ValidateClauseSetOption2() {
             </span>
           </div> */}
 
-          <div className="flex gap-6 items-start">
+          <div className="flex flex-col lg:flex-row gap-6 items-stretch lg:items-start">
             <div className="flex-1 min-w-0 space-y-6">
               {activeTab === 'compliance' && (
                 <ComplianceSection
@@ -190,7 +191,7 @@ export default function ValidateClauseSetOption2() {
 
             {/* Review detail card (right side - only visible in updates tab) */}
             {selectedReview && activeTab === 'updates' && (
-              <div className="w-[420px] h-[650px] flex-shrink-0 sticky top-0">
+              <div className="w-full lg:w-[380px] xl:w-[420px] lg:flex-shrink-0 h-[650px] lg:sticky lg:top-0">
                 <div className="bg-white border border-gray-200 rounded overflow-hidden flex flex-col h-full">
                   <div className="px-5 py-4 flex items-start justify-between border-b border-gray-200 flex-shrink-0">
                     <div className="pr-3 min-w-0">
@@ -245,7 +246,7 @@ export default function ValidateClauseSetOption2() {
 
             {/* Clause detail card (right side - only visible in compliance tab) */}
             {selectedClause && activeTab === 'compliance' && (
-              <div className="w-[420px] h-[650px] flex-shrink-0 sticky top-0">
+              <div className="w-full lg:w-[380px] xl:w-[420px] lg:flex-shrink-0 h-[650px] lg:sticky lg:top-0">
                 <div className="bg-white border border-gray-200 rounded overflow-hidden flex flex-col h-full">
                   <div className="px-5 py-4 flex items-start justify-between border-b border-gray-200 flex-shrink-0">
                     <div className="pr-3 min-w-0">
@@ -347,6 +348,17 @@ function ComplianceSection(props: ComplianceSectionProps) {
       title="Clause Compliance"
       banner={
         <>
+          <RichTextDisplayField
+            value={[
+              <TextItem
+                key="d"
+                text="The following clauses should be included or excluded based on current rules and templates. Your decisions will be saved and cannot be undone."
+                color="SECONDARY"
+                size="STANDARD"
+              />,
+            ]}
+            marginBelow="STANDARD"
+          />
           <div className="flex items-center gap-2 mb-4">
             <Info
               size={16}
@@ -359,17 +371,6 @@ function ComplianceSection(props: ComplianceSectionProps) {
               Selecting "Accept All" or "Reject All" applies that action to all clauses in this section.
             </span>
           </div>
-          <RichTextDisplayField
-            value={[
-              <TextItem
-                key="d"
-                text="The following clauses should be included or excluded based on current rules and templates. Your decisions will be saved and cannot be undone."
-                color="SECONDARY"
-                size="SMALL"
-              />,
-            ]}
-            marginBelow="LESS"
-          />
         </>
       }
     >
@@ -420,20 +421,33 @@ function UpdatesSection({
 }: UpdatesSectionProps) {
   return (
     <SectionCard
-      title="Clauses to Review"
+      title="Clauses with Updates"
       banner={
-        <div className="flex items-center gap-2 mb-6">
-          <Info
-            size={16}
-            fill="#2322F0"
-            stroke="#F5F5FC"
-            strokeWidth={2.5}
-            className="flex-shrink-0"
+        <>
+          <RichTextDisplayField
+            value={[
+              <TextItem
+                key="d"
+                text="Below clauses have a latest version available. Accept the update or retain your current version."
+                color="SECONDARY"
+                size="STANDARD"
+              />,
+            ]}
+            marginBelow="STANDARD"
           />
-          <span className="text-sm text-[#222222]">
-            Some clauses have updates waiting for review. Review each one and choose to accept the update, keep the current version, or edit the clause text.
-          </span>
-        </div>
+          <div className="flex items-center gap-2 mb-6">
+            <AlertTriangle
+              size={16}
+              fill="#856C00"
+              stroke="#FFFCEB"
+              strokeWidth={2.5}
+              className="flex-shrink-0"
+            />
+            <span className="text-sm text-[#222222]">
+              Some clause updates are pending review. Retain your current version, request admin for approval, or edit the clause text.
+            </span>
+          </div>
+        </>
       }
     >
       <ReviewTable
@@ -452,18 +466,17 @@ function ErrorsSection({ incomplete }: { incomplete: IncompleteClause[] }) {
     <SectionCard
       title="Incomplete clauses"
       banner={
-        <div className="flex items-center gap-2 mb-6">
-          <AlertTriangle
-            size={16}
-            fill="#856C00"
-            stroke="#FFFCEB"
-            strokeWidth={2.5}
-            className="flex-shrink-0"
-          />
-          <span className="text-sm text-[#222222]">
-            The following clauses have missing information. Review the clauses with errors in the clause set summary and mark them as complete.
-          </span>
-        </div>
+        <RichTextDisplayField
+          value={[
+            <TextItem
+              key="d"
+              text="The following clauses are missing fill-in values. Complete the fill-in values in the clause set summary and mark them as complete."
+              color="SECONDARY"
+              size="STANDARD"
+            />,
+          ]}
+          marginBelow="STANDARD"
+        />
       }
     >
       <IncompleteTable incomplete={incomplete} />
@@ -486,8 +499,9 @@ function SourceCell({
     return <span>{recommendedBy}</span>
   }
   return (
-    <span className="inline-flex items-center gap-1.5">
-      <span>{recommendedBy} from</span>
+    <span className="inline-flex items-center gap-1">
+      <span>{recommendedBy}</span>
+      <span>(</span>
       <button
         type="button"
         className="inline-flex items-center gap-1 text-[#2322F0] hover:underline font-medium"
@@ -495,6 +509,7 @@ function SourceCell({
         <ExternalLink size={14} className="flex-shrink-0" />
         {reference}
       </button>
+      <span>)</span>
     </span>
   )
 }
@@ -675,14 +690,14 @@ function ReviewTable({
   onActionClear,
 }: ReviewTableProps) {
   return (
-    <div className="overflow-x-auto">
-    <table className="text-sm" style={{ minWidth: '900px' }}>
+    <div>
+    <table className="w-full text-sm table-fixed">
       <colgroup>
-        <col className="w-56" />
-        <col className="w-32" />
-        <col className="w-72" />
-        <col className="w-72" />
-        <col className="w-56" />
+        <col style={{ width: '24%' }} />
+        <col style={{ width: '14%' }} />
+        <col style={{ width: '19%' }} />
+        <col style={{ width: '19%' }} />
+        <col style={{ width: '24%' }} />
       </colgroup>
       <thead>
         <tr className="text-left border-b border-gray-200">
@@ -710,15 +725,37 @@ function ReviewTable({
   )
 }
 
+/**
+ * Renders the review status. "Pending Review" gets a yellow tag;
+ * "Updated" shows as a dash since the date diff already conveys the update.
+ */
+function StatusCell({ status }: { status: string }) {
+  if (status === 'Pending Review') {
+    return (
+      <TagField
+        size="SMALL"
+        tags={[
+          {
+            text: status,
+            backgroundColor: 'YELLOW_50',
+            textColor: 'YELLOW_800',
+          },
+        ]}
+      />
+    )
+  }
+  return <span>-</span>
+}
+
 function DateCompare({ existing, next }: { existing: string; next: string }) {
   if (existing === next) {
-    return <span className="whitespace-nowrap">{existing}</span>
+    return <span>{existing}</span>
   }
   return (
-    <div className="flex items-center gap-1.5 text-[#222222] whitespace-nowrap">
-      <span>{existing}</span>
+    <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[#222222]">
+      <span className="whitespace-nowrap">{existing}</span>
       <ArrowRight size={14} className="flex-shrink-0" />
-      <span className="font-semibold">{next}</span>
+      <span className="font-semibold whitespace-nowrap">{next}</span>
     </div>
   )
 }
@@ -750,7 +787,7 @@ function ReviewRow({
         </button>
       </td>
       <td className="py-3 pr-4 align-middle text-gray-600">
-        {review.status || '-'}
+        <StatusCell status={review.status} />
       </td>
       <td className="py-3 pr-4 align-middle">
         <DateCompare existing={review.existingEffectiveDate} next={review.newEffectiveDate} />
@@ -759,8 +796,8 @@ function ReviewRow({
         <DateCompare existing={review.existingLastUpdated} next={review.newLastUpdated} />
       </td>
       <td className="py-3 pr-4 align-middle">
-        <div className="grid grid-cols-[auto_auto_auto] items-center gap-3 justify-start">
-          <label className="flex items-center gap-1.5 cursor-pointer">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
             <input
               type="radio"
               name={`review-${review.id}`}
@@ -770,7 +807,7 @@ function ReviewRow({
             />
             <span>Retain</span>
           </label>
-          <label className="flex items-center gap-1.5 cursor-pointer">
+          <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
             <input
               type="radio"
               name={`review-${review.id}`}
