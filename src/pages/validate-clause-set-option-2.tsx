@@ -352,7 +352,7 @@ function ComplianceSection(props: ComplianceSectionProps) {
             value={[
               <TextItem
                 key="d"
-                text="The following clauses should be included or excluded based on current rules and templates. Your decisions will be saved and cannot be undone."
+                text="The following clauses should be included or excluded based on current rules and templates."
                 color="SECONDARY"
                 size="STANDARD"
               />,
