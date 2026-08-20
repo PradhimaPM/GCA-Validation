@@ -34,7 +34,7 @@ export default function ValidateClauseSetOption2() {
   const [loading, setLoading] = useState(true)
   const [selectedClause, setSelectedClause] = useState<Clause | null>(null)
   const [selectedReview, setSelectedReview] = useState<ClauseReview | null>(null)
-  const [showChanges, setShowChanges] = useState(false)
+  const [showOriginal, setShowOriginal] = useState(false)
   const [activeTab, setActiveTab] = useState<TabId>('compliance')
 
   useEffect(() => {
@@ -216,28 +216,28 @@ export default function ValidateClauseSetOption2() {
                   </div>
                   <div className="px-5 py-3 flex items-center justify-between border-b border-gray-200 flex-shrink-0">
                     <span className="text-xs uppercase tracking-wide text-gray-500 font-semibold">
-                      {showChanges ? 'Changes' : 'Clause text'}
+                      Clause text
                     </span>
                     <label className="flex items-center gap-2 cursor-pointer">
-                      <span className="text-sm text-[#222222]">Show changes</span>
+                      <span className="text-sm text-[#222222]">Show original text</span>
                       <input
                         type="checkbox"
-                        checked={showChanges}
-                        onChange={e => setShowChanges(e.target.checked)}
+                        checked={showOriginal}
+                        onChange={e => setShowOriginal(e.target.checked)}
                         className="cursor-pointer accent-[#2322F0]"
                       />
                     </label>
                   </div>
                   <div className="px-5 py-4 overflow-y-auto flex-1">
-                    {showChanges ? (
+                    {showOriginal ? (
+                      <div className="text-sm text-gray-800 whitespace-pre-line leading-relaxed">
+                        {selectedReview.existingText}
+                      </div>
+                    ) : (
                       <TextDiff
                         oldText={selectedReview.existingText}
                         newText={selectedReview.newText}
                       />
-                    ) : (
-                      <div className="text-sm text-gray-800 whitespace-pre-line leading-relaxed">
-                        {selectedReview.newText}
-                      </div>
                     )}
                   </div>
                 </div>
