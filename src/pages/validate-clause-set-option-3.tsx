@@ -9,7 +9,7 @@ import {
   TextItem,
   TagField,
 } from '@pglevy/sailwind'
-import { X, Info, ArrowRight, ExternalLink, Clock } from 'lucide-react'
+import { X, Info, ExternalLink, Clock } from 'lucide-react'
 import {
   getClauses,
   updateClauseAction,
@@ -30,7 +30,7 @@ import { getIncompleteClauses, type IncompleteClause } from '../db/incomplete-cl
 function pendingClauseCountLabel(count: number): string {
   const words = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine']
   const label = count < words.length ? words[count] : String(count)
-  return `${label} ${count === 1 ? 'clause has an' : 'clauses have'}`
+  return `${label} alternate clause ${count === 1 ? 'version is' : 'versions are'}`
 }
 
 /** What the side panel is currently showing. */
@@ -241,10 +241,9 @@ export default function ValidateClauseSetOption3() {
                     <div className="flex items-start gap-2 mb-6">
                       <Clock size={16} className="flex-shrink-0 mt-0.5 text-[#856C00]" />
                       <span className="text-sm text-[#222222] leading-relaxed">
-                        {pendingClauseCountLabel(pendingCount)} alternate{' '}
-                        {pendingCount === 1 ? 'version' : 'versions'} pending policy approval. View{' '}
-                        {pendingCount === 1 ? 'it' : 'them'} in the clause details. Selection
-                        requires approval, but finalizing the clause set remains available.
+                        {pendingClauseCountLabel(pendingCount)} pending policy approval. View{' '}
+                        {pendingCount === 1 ? 'it' : 'them'} in the clause details. Finalizing the
+                        clause set remains unblocked.
                       </span>
                     </div>
                   )}
@@ -550,18 +549,22 @@ function UpdateTable({
   return (
     <table className="w-full text-sm table-fixed">
       <colgroup>
-        <col style={{ width: '24%' }} />
-        <col style={{ width: '14%' }} />
-        <col style={{ width: '19%' }} />
-        <col style={{ width: '19%' }} />
-        <col style={{ width: '24%' }} />
+        <col style={{ width: '20%' }} />
+        <col style={{ width: '12%' }} />
+        <col style={{ width: '12%' }} />
+        <col style={{ width: '12%' }} />
+        <col style={{ width: '12%' }} />
+        <col style={{ width: '12%' }} />
+        <col style={{ width: '20%' }} />
       </colgroup>
       <thead>
         <tr className="text-left border-b border-gray-200">
           <th className="pb-2 pr-4 font-normal text-gray-500">Clause</th>
           <th className="pb-2 pr-4 font-normal text-gray-500">Status</th>
-          <th className="pb-2 pr-4 font-normal text-gray-500">Effective Date</th>
-          <th className="pb-2 pr-4 font-normal text-gray-500">Last Updated</th>
+          <th className="pb-2 pr-4 font-normal text-gray-500">Current Effective Date</th>
+          <th className="pb-2 pr-4 font-normal text-gray-500">New Effective Date</th>
+          <th className="pb-2 pr-4 font-normal text-gray-500">Current Last Updated</th>
+          <th className="pb-2 pr-4 font-normal text-gray-500">New Last Updated</th>
           <th className="pb-2 pr-4 font-normal text-gray-500">Action</th>
         </tr>
       </thead>
@@ -620,22 +623,24 @@ function UpdateRow({
             ]}
           />
         ) : (
-          <span className="text-[#6C6C75]">—</span>
+          <span className="text-[#6C6C75]">-</span>
         )}
       </td>
 
       <td className="py-3 pr-4 align-middle">
-        <DateCompare
-          existing={review.current.effectiveDate}
-          next={review.available?.effectiveDate}
-        />
+        <CurrentDate value={review.current.effectiveDate} />
       </td>
 
       <td className="py-3 pr-4 align-middle">
-        <DateCompare
-          existing={review.current.lastUpdated}
-          next={review.available?.lastUpdated}
-        />
+        <NewDate current={review.current.effectiveDate} next={review.available?.effectiveDate} />
+      </td>
+
+      <td className="py-3 pr-4 align-middle">
+        <CurrentDate value={review.current.lastUpdated} />
+      </td>
+
+      <td className="py-3 pr-4 align-middle">
+        <NewDate current={review.current.lastUpdated} next={review.available?.lastUpdated} />
       </td>
 
       <td className="py-3 pr-4 align-middle">
@@ -674,28 +679,27 @@ function UpdateRow({
             )}
           </div>
         ) : (
-          <span className="text-[#6C6C75]">—</span>
+          <span className="text-[#6C6C75]">-</span>
         )}
       </td>
     </tr>
   )
 }
 
+/** The date on the version currently in the clause set. */
+function CurrentDate({ value }: { value: string }) {
+  return <span className="whitespace-nowrap">{value}</span>
+}
+
 /**
- * Shows a date. When there is a newer version to move to, shows the current
- * date pointing to the new one. Otherwise shows the current date on its own.
+ * The date on the version being offered. Renders a dash when there is nothing
+ * to move to, or when the date is unchanged between the two versions.
  */
-function DateCompare({ existing, next }: { existing: string; next?: string }) {
-  if (!next || existing === next) {
-    return <span>{existing}</span>
+function NewDate({ current, next }: { current: string; next?: string }) {
+  if (!next || next === current) {
+    return <span className="text-[#6C6C75]">-</span>
   }
-  return (
-    <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[#222222]">
-      <span className="whitespace-nowrap">{existing}</span>
-      <ArrowRight size={14} className="flex-shrink-0" />
-      <span className="font-semibold whitespace-nowrap">{next}</span>
-    </div>
-  )
+  return <span className="whitespace-nowrap">{next}</span>
 }
 
 // ============================================================================
@@ -781,22 +785,15 @@ function UpdatePanel({
       <div className="px-5 py-4 overflow-y-auto flex-1">
         {tab === 'changes' && review.available && (
           <>
-            <div className="mb-3">
-              <div className="text-xs text-[#6C6C75] mb-2">
-                {review.current.label}
-                <ArrowRight size={12} className="inline mx-1.5 align-[-1px]" />
-                {review.available.label}
-              </div>
-              <div className="flex items-center gap-4 text-xs">
-                <span className="inline-flex items-center gap-1.5 text-[#6C6C75]">
-                  <span className="inline-block w-2.5 h-2.5 rounded-sm bg-[#9F0019]" />
-                  Removed
-                </span>
-                <span className="inline-flex items-center gap-1.5 text-[#6C6C75]">
-                  <span className="inline-block w-2.5 h-2.5 rounded-sm bg-[#117C00]" />
-                  Added
-                </span>
-              </div>
+            <div className="flex items-center gap-4 text-xs mb-3">
+              <span className="inline-flex items-center gap-1.5 text-[#6C6C75]">
+                <span className="inline-block w-2.5 h-2.5 rounded-sm bg-[#9F0019]" />
+                Removed
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-[#6C6C75]">
+                <span className="inline-block w-2.5 h-2.5 rounded-sm bg-[#117C00]" />
+                Added
+              </span>
             </div>
             <TextDiff oldText={review.current.text} newText={review.available.text} />
             {review.skippedNote && (
@@ -808,15 +805,9 @@ function UpdatePanel({
         )}
 
         {tab === 'current' && (
-          <>
-            <div className="text-xs text-[#6C6C75] mb-3">
-              {review.current.label} · Effective {review.current.effectiveDate} · Last updated{' '}
-              {review.current.lastUpdated}
-            </div>
-            <div className="text-sm text-gray-800 whitespace-pre-line leading-relaxed">
-              {review.current.text}
-            </div>
-          </>
+          <div className="text-sm text-gray-800 whitespace-pre-line leading-relaxed">
+            {review.current.text}
+          </div>
         )}
 
         {tab === 'pending' && review.pending && (
@@ -826,10 +817,6 @@ function UpdatePanel({
               <span className="text-xs text-[#222222] leading-relaxed">
                 Read-only until approved. You cannot select this version yet.
               </span>
-            </div>
-            <div className="text-xs text-[#6C6C75] mb-3">
-              {review.pending.label} · Submitted {review.pending.submittedOn} by{' '}
-              {review.pending.submittedBy}
             </div>
             <div className="text-sm text-gray-800 whitespace-pre-line leading-relaxed">
               {review.pending.text}
