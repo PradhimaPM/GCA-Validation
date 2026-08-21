@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   HeadingField,
   CardLayout,
@@ -23,6 +23,7 @@ import {
   updateClauseUpdateReviewAction,
   clearClauseUpdateReviewAction,
   type ClauseUpdateReview,
+  type ClauseVersion,
 } from '../db/clause-update-reviews'
 import { getIncompleteClauses, type IncompleteClause } from '../db/incomplete-clauses'
 
@@ -31,7 +32,7 @@ type PanelView =
   | { kind: 'clause'; clause: Clause }
   | { kind: 'update'; review: ClauseUpdateReview }
 
-export default function ValidateClauseSetOption3() {
+export default function ValidateClauseSetOption4() {
   const [clauses, setClauses] = useState<Clause[]>([])
   const [reviews, setReviews] = useState<ClauseUpdateReview[]>([])
   const [incomplete, setIncomplete] = useState<IncompleteClause[]>([])
@@ -52,10 +53,7 @@ export default function ValidateClauseSetOption3() {
   const inclusions = clauses.filter(c => c.type === 'inclusion')
   const exclusions = clauses.filter(c => c.type === 'exclusion')
 
-  // Both of these carry a Pending Review tag, but they mean different things:
-  // one still has an update you can take, the other has nothing to decide.
-  const pendingWithUpdate = reviews.filter(r => r.pending && r.available).length
-  const pendingNoAction = reviews.filter(r => r.pending && !r.available).length
+
 
   const handleActionChange = async (id: number, action: 'accept' | 'reject') => {
     await updateClauseAction(id, action)
@@ -224,37 +222,13 @@ export default function ValidateClauseSetOption3() {
                     value={[
                       <TextItem
                         key="d"
-                        text="New versions of these clauses are available. Accept the update or keep the current version. Clause set finalization remains unblocked."
+                        text="New versions of these clauses are available. Accept the update or keep the current version."
                         color="SECONDARY"
                         size="STANDARD"
                       />,
                     ]}
-                    marginBelow="EVEN_LESS"
+                    marginBelow="STANDARD"
                   />
-
-                  {(pendingWithUpdate > 0 || pendingNoAction > 0) && (
-                    <div className="space-y-1.5 mb-6">
-                      {pendingWithUpdate > 0 && (
-                        <div className="flex items-start gap-2">
-                          <Clock size={16} className="flex-shrink-0 mt-0.5 text-[#856C00]" />
-                          <span className="text-sm text-[#222222] leading-relaxed">
-                            Pending Review with an update available: update to import unprocessed
-                            clause text to edit as needed, or wait for approval.
-                          </span>
-                        </div>
-                      )}
-                      {pendingNoAction > 0 && (
-                        <div className="flex items-start gap-2">
-                          <Clock size={16} className="flex-shrink-0 mt-0.5 text-[#856C00]" />
-                          <span className="text-sm text-[#222222] leading-relaxed">
-                            Pending Review with no action: you already have the unprocessed text.
-                            The reviewed version is view-only until approved.
-                          </span>
-                        </div>
-                      )}
-                  
-                    </div>
-                  )}
 
                   <UpdateTable
                     reviews={reviews}
@@ -593,28 +567,37 @@ function UpdateRow({
   return (
     <tr className={`border-b border-gray-100 ${isSelected ? 'bg-blue-50' : ''}`}>
       <td className="py-3 pr-4 align-middle">
-        <button
-          type="button"
-          onClick={() => onReviewClick(review)}
-          className="text-[#2322F0] hover:underline text-left"
-        >
-          {review.clauseNumber} | {review.title}
-        </button>
+        <span className="inline-flex items-start gap-1.5">
+          {review.pending && (
+            <HoverTip text={pendingHelpText(review)}>
+              <Clock size={15} className="flex-shrink-0 mt-0.5 text-[#856C00] cursor-help" />
+            </HoverTip>
+          )}
+          <button
+            type="button"
+            onClick={() => onReviewClick(review)}
+            className="text-[#2322F0] hover:underline text-left"
+          >
+            {review.clauseNumber} | {review.title}
+          </button>
+        </span>
       </td>
 
       <td className="py-3 pr-4 align-middle">
         {review.pending ? (
-          <TagField
-            size="SMALL"
-            tags={[
-              {
-                text: 'Pending Review',
-                backgroundColor: 'YELLOW_50',
-                textColor: 'YELLOW_800',
-                tooltip: `${review.pending.label} — submitted ${review.pending.submittedOn} by ${review.pending.submittedBy}. You cannot select it until it is approved.`,
-              },
-            ]}
-          />
+          <HoverTip text={pendingHelpText(review)}>
+            <TagField
+              size="SMALL"
+              tags={[
+                {
+                  text: 'Pending Review',
+                  backgroundColor: 'YELLOW_50',
+                  textColor: 'YELLOW_800',
+                },
+              ]}
+              marginBelow="NONE"
+            />
+          </HoverTip>
         ) : (
           <span className="text-[#6C6C75]">-</span>
         )}
@@ -677,6 +660,69 @@ function UpdateRow({
       </td>
     </tr>
   )
+}
+
+/**
+ * Tooltip that appears immediately on hover or keyboard focus. Used instead of
+ * the native `title` attribute, which has a long delay and unstyled system
+ * chrome. Positioned above the trigger, falling below when there is no room.
+ */
+function HoverTip({ text, children }: { text: string; children: React.ReactNode }) {
+  const [position, setPosition] = useState<{ top: number; left: number } | null>(null)
+  const triggerRef = useRef<HTMLSpanElement>(null)
+
+  const TIP_WIDTH = 288
+  const TIP_ESTIMATED_HEIGHT = 72
+  const GAP = 8
+
+  // Positioned with `fixed` so the dialog's scrolling body cannot clip it.
+  const show = () => {
+    const el = triggerRef.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    const fitsAbove = rect.top - TIP_ESTIMATED_HEIGHT - GAP > 0
+    setPosition({
+      top: fitsAbove ? rect.top - GAP - TIP_ESTIMATED_HEIGHT : rect.bottom + GAP,
+      left: Math.min(rect.left, window.innerWidth - TIP_WIDTH - 16),
+    })
+  }
+
+  return (
+    <span
+      ref={triggerRef}
+      className="inline-flex"
+      onMouseEnter={show}
+      onMouseLeave={() => setPosition(null)}
+      onFocus={show}
+      onBlur={() => setPosition(null)}
+      tabIndex={0}
+      role="button"
+      aria-label={text}
+    >
+      {children}
+      {position && (
+        <span
+          role="tooltip"
+          style={{ top: position.top, left: position.left, width: TIP_WIDTH }}
+          className="fixed z-[60] px-3 py-2 rounded bg-[#222222] text-white text-xs leading-relaxed shadow-lg pointer-events-none"
+        >
+          {text}
+        </span>
+      )}
+    </span>
+  )
+}
+
+/**
+ * Explains what Pending Review means for this specific row. The tag looks the
+ * same either way, but the consequence differs: one row still has an update to
+ * take, the other has nothing to decide until approval comes through.
+ */
+function pendingHelpText(review: ClauseUpdateReview): string {
+  if (review.available) {
+    return 'Update to import unprocessed clause text to edit as needed, or wait for approval.'
+  }
+  return 'You already have the unprocessed text. The reviewed version is view-only until approved.'
 }
 
 /** The date on the version currently in the clause set. */
@@ -778,6 +824,7 @@ function UpdatePanel({
       <div className="px-5 py-4 overflow-y-auto flex-1">
         {tab === 'changes' && review.available && (
           <>
+            {isUnprocessed(review.available, review.hasAlternate) && <UnprocessedBanner />}
             <div className="flex items-center gap-4 text-xs mb-3">
               <span className="inline-flex items-center gap-1.5 text-[#6C6C75]">
                 <span className="inline-block w-2.5 h-2.5 rounded-sm bg-[#9F0019]" />
@@ -798,9 +845,12 @@ function UpdatePanel({
         )}
 
         {tab === 'current' && (
-          <div className="text-sm text-gray-800 whitespace-pre-line leading-relaxed">
-            {review.current.text}
-          </div>
+          <>
+            {isUnprocessed(review.current, review.hasAlternate) && <UnprocessedBanner />}
+            <div className="text-sm text-gray-800 whitespace-pre-line leading-relaxed">
+              {review.current.text}
+            </div>
+          </>
         )}
 
         {tab === 'pending' && review.pending && (
@@ -817,6 +867,33 @@ function UpdatePanel({
           </>
         )}
       </div>
+    </div>
+  )
+}
+
+/**
+ * True when a version still carries its alternate instructions at the end
+ * rather than having them worked into the body.
+ */
+function isUnprocessed(version: ClauseVersion, hasAlternate: boolean): boolean {
+  return hasAlternate && version.kind === 'as-published'
+}
+
+/** Flags clause text that has not had its alternate instructions applied yet. */
+function UnprocessedBanner() {
+  return (
+    <div className="flex items-start gap-2 px-3 py-2.5 bg-[#F5F5FC] border border-[#DCDEF5] rounded mb-4">
+      <Info
+        size={15}
+        fill="#2322F0"
+        stroke="#F5F5FC"
+        strokeWidth={2.5}
+        className="flex-shrink-0 mt-0.5"
+      />
+      <span className="text-xs text-[#222222] leading-relaxed">
+        This version still has its alternate instructions at the end. Edit the text from the
+        document or the clause set summary if you need it applied now.
+      </span>
     </div>
   )
 }
