@@ -352,7 +352,7 @@ function ComplianceSection(props: ComplianceSectionProps) {
             value={[
               <TextItem
                 key="d"
-                text="The following clauses should be included or excluded based on current rules and templates."
+                text="Include or exclude these clauses based on current rules and templates."
                 color="SECONDARY"
                 size="STANDARD"
               />,
@@ -421,7 +421,7 @@ function UpdatesSection({
 }: UpdatesSectionProps) {
   return (
     <SectionCard
-      title="Clauses with Updates"
+      title="Clause Updates"
       banner={
         <>
           <RichTextDisplayField

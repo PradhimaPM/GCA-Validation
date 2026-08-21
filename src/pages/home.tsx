@@ -6,7 +6,10 @@ export default function Home() {
 
   const pages = [
     { title: 'Kanban Board', path: '/', description: 'Project management board with lists, cards, and task checklists' },
-    { title: 'Validate Clause Set', path: '/validate-clause-set', description: 'Review and accept/reject contract clauses for compliance' },
+    { title: 'Validate Clause Set (Option 1)', path: '/validate-clause-set', description: 'Review and accept/reject contract clauses for compliance' },
+    { title: 'Validate Clause Set (Option 2)', path: '/validate-clause-set-option-2', description: 'Tabbed layout for compliance, updates, and errors' },
+    { title: 'Validate Clause Set (Option 3)', path: '/validate-clause-set-option-3', description: 'Handles clause alternates awaiting policy approval alongside regular updates' },
+    { title: 'Validate Clause Set (Empty States)', path: '/validate-clause-set-empty', description: 'All sections with nothing to review' },
     { title: 'AI Clause Selection', path: '/ai-clause-selection', description: 'Enter contract details, upload SOW, and let AI suggest clauses with confidence tiers' },
   ]
 

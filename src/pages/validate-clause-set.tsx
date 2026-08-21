@@ -149,7 +149,7 @@ export default function ValidateClauseSet() {
               value={[
                 <TextItem
                   key="d"
-                  text="The following clauses should be included or excluded based on current rules and templates."
+                  text="Include or exclude these clauses based on current rules and templates."
                   color="SECONDARY"
                   size="STANDARD"
                 />,
@@ -202,11 +202,11 @@ export default function ValidateClauseSet() {
             </div>
           </CardLayout>
 
-          {/* Section 2: Clauses to Review */}
+          {/* Section 2: Clause Updates */}
           <CardLayout padding="NONE" showBorder={true} showShadow={false} style="STANDARD">
             <div className="px-6 py-2.5 bg-[#F5F5F7] border-b border-gray-200">
               <HeadingField
-                text="Clauses with Updates"
+                text="Clause Updates"
                 size="SMALL"
                 headingTag="H2"
                 fontWeight="SEMI_BOLD"

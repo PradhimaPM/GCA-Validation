@@ -6,6 +6,7 @@ import Home from './pages/home'
 import NotFound from './pages/not-found'
 import ValidateClauseSet from './pages/validate-clause-set'
 import ValidateClauseSetOption2 from './pages/validate-clause-set-option-2'
+import ValidateClauseSetOption3 from './pages/validate-clause-set-option-3'
 import ValidateClauseSetEmpty from './pages/validate-clause-set-empty'
 import AiClauseSelection from './pages/ai-clause-selection'
 
@@ -14,6 +15,7 @@ const pages = [
   { path: '/home', title: 'Home', component: Home },
   { path: '/validate-clause-set', title: 'Validate Clause Set (Option 1)', component: ValidateClauseSet },
   { path: '/validate-clause-set-option-2', title: 'Validate Clause Set (Option 2)', component: ValidateClauseSetOption2 },
+  { path: '/validate-clause-set-option-3', title: 'Validate Clause Set (Option 3)', component: ValidateClauseSetOption3 },
   { path: '/validate-clause-set-empty', title: 'Validate Clause Set (Empty States)', component: ValidateClauseSetEmpty },
   { path: '/ai-clause-selection', title: 'AI Clause Selection', component: AiClauseSelection },
 ]

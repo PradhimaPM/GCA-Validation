@@ -70,11 +70,11 @@ export default function ValidateClauseSetEmpty() {
               </div>
             </div>
 
-            {/* Section 2: Clauses to Review */}
+            {/* Section 2: Clause Updates */}
             <div className="bg-white border border-gray-200 rounded overflow-hidden">
               <div className="px-6 py-2.5 bg-[#F5F5F7] border-b border-gray-200">
                 <HeadingField
-                  text="Clauses to Review"
+                  text="Clause Updates"
                   size="SMALL"
                   headingTag="H2"
                   fontWeight="SEMI_BOLD"
