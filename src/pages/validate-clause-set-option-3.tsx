@@ -9,7 +9,7 @@ import {
   TextItem,
   TagField,
 } from '@pglevy/sailwind'
-import { X, Info, ExternalLink, Clock } from 'lucide-react'
+import { X, Info, ExternalLink, AlertTriangle } from 'lucide-react'
 import {
   getClauses,
   updateClauseAction,
@@ -52,10 +52,9 @@ export default function ValidateClauseSetOption3() {
   const inclusions = clauses.filter(c => c.type === 'inclusion')
   const exclusions = clauses.filter(c => c.type === 'exclusion')
 
-  // Both of these carry a Pending Review tag, but they mean different things:
-  // one still has an update you can take, the other has nothing to decide.
-  const pendingWithUpdate = reviews.filter(r => r.pending && r.available).length
-  const pendingNoAction = reviews.filter(r => r.pending && !r.available).length
+  // Rows whose newer version has not cleared policy review. These are still
+  // selectable — the warning above the table sets the expectation.
+  const pendingCount = reviews.filter(r => r.pendingReview).length
 
   const handleActionChange = async (id: number, action: 'accept' | 'reject') => {
     await updateClauseAction(id, action)
@@ -232,27 +231,18 @@ export default function ValidateClauseSetOption3() {
                     marginBelow="EVEN_LESS"
                   />
 
-                  {(pendingWithUpdate > 0 || pendingNoAction > 0) && (
-                    <div className="space-y-1.5 mb-6">
-                      {pendingWithUpdate > 0 && (
-                        <div className="flex items-start gap-2">
-                          <Clock size={16} className="flex-shrink-0 mt-0.5 text-[#856C00]" />
-                          <span className="text-sm text-[#222222] leading-relaxed">
-                            Pending Review with an update available: update to import unprocessed
-                            clause text to edit as needed, or wait for approval.
-                          </span>
-                        </div>
-                      )}
-                      {pendingNoAction > 0 && (
-                        <div className="flex items-start gap-2">
-                          <Clock size={16} className="flex-shrink-0 mt-0.5 text-[#856C00]" />
-                          <span className="text-sm text-[#222222] leading-relaxed">
-                            Pending Review with no action: you already have the unprocessed text.
-                            The reviewed version is view-only until approved.
-                          </span>
-                        </div>
-                      )}
-                  
+                  {pendingCount > 0 && (
+                    <div className="flex items-start gap-2 mb-6">
+                      <AlertTriangle
+                        size={16}
+                        fill="#856C00"
+                        stroke="#FFFCEB"
+                        strokeWidth={2.5}
+                        className="flex-shrink-0 mt-0.5"
+                      />
+                      <span className="text-sm text-[#222222] leading-relaxed">
+                        Items are pending review. Review the changes before proceeding
+                      </span>
                     </div>
                   )}
 
@@ -282,7 +272,7 @@ export default function ValidateClauseSetOption3() {
                     value={[
                       <TextItem
                         key="d"
-                        text="Complete the fill-in for these clauses and mark them as complete."
+                        text="Complete the fill-in for these clauses from summary and mark them as complete."
                         color="SECONDARY"
                         size="STANDARD"
                       />,
@@ -509,11 +499,9 @@ function IncompleteTable({ incomplete }: { incomplete: IncompleteClause[] }) {
 
 // ============================================================================
 // UpdateTable — every clause with a version change, actionable or not.
-// A row is actionable when `available` is set: the dates show current -> new and
-// Retain/Update applies. When it isn't, the set already holds the newest usable
-// text, so the dates stand alone and the Action cell is a dash.
-// Status carries the Pending Review tag when an unapproved alternate exists;
-// that version is readable from the side panel but never selectable.
+// Every row offers a newer version, so Retain/Update always applies. Status
+// carries a Pending Review tag when that version has not cleared policy
+// approval — the CO can still select it, with a warning above the table.
 // ============================================================================
 
 interface UpdateTableProps {
@@ -542,22 +530,18 @@ function UpdateTable({
   return (
     <table className="w-full text-sm table-fixed">
       <colgroup>
-        <col style={{ width: '20%' }} />
-        <col style={{ width: '12%' }} />
-        <col style={{ width: '12%' }} />
-        <col style={{ width: '12%' }} />
-        <col style={{ width: '12%' }} />
-        <col style={{ width: '12%' }} />
+        <col style={{ width: '28%' }} />
+        <col style={{ width: '16%' }} />
+        <col style={{ width: '18%' }} />
+        <col style={{ width: '18%' }} />
         <col style={{ width: '20%' }} />
       </colgroup>
       <thead>
         <tr className="text-left border-b border-gray-200">
           <th className="pb-2 pr-4 font-normal text-gray-500">Clause</th>
           <th className="pb-2 pr-4 font-normal text-gray-500">Status</th>
-          <th className="pb-2 pr-4 font-normal text-gray-500">Current Effective Date</th>
-          <th className="pb-2 pr-4 font-normal text-gray-500">New Effective Date</th>
-          <th className="pb-2 pr-4 font-normal text-gray-500">Current Last Updated</th>
-          <th className="pb-2 pr-4 font-normal text-gray-500">New Last Updated</th>
+          <th className="pb-2 pr-4 font-normal text-gray-500 text-right">Current Effective Date</th>
+          <th className="pb-2 pr-4 font-normal text-gray-500 text-right">New Effective Date</th>
           <th className="pb-2 pr-4 font-normal text-gray-500">Action</th>
         </tr>
       </thead>
@@ -603,7 +587,7 @@ function UpdateRow({
       </td>
 
       <td className="py-3 pr-4 align-middle">
-        {review.pending ? (
+        {review.pendingReview ? (
           <TagField
             size="SMALL"
             tags={[
@@ -611,7 +595,7 @@ function UpdateRow({
                 text: 'Pending Review',
                 backgroundColor: 'YELLOW_50',
                 textColor: 'YELLOW_800',
-                tooltip: `${review.pending.label} — submitted ${review.pending.submittedOn} by ${review.pending.submittedBy}. You cannot select it until it is approved.`,
+                tooltip: 'This version has not cleared policy approval yet. You can still select it.',
               },
             ]}
           />
@@ -620,60 +604,48 @@ function UpdateRow({
         )}
       </td>
 
-      <td className="py-3 pr-4 align-middle">
+      <td className="py-3 pr-4 align-middle text-right">
         <CurrentDate value={review.current.effectiveDate} />
       </td>
 
-      <td className="py-3 pr-4 align-middle">
-        <NewDate current={review.current.effectiveDate} next={review.available?.effectiveDate} />
+      <td className="py-3 pr-4 align-middle text-right">
+        <NewDate value={review.available.effectiveDate} />
       </td>
 
       <td className="py-3 pr-4 align-middle">
-        <CurrentDate value={review.current.lastUpdated} />
-      </td>
-
-      <td className="py-3 pr-4 align-middle">
-        <NewDate current={review.current.lastUpdated} next={review.available?.lastUpdated} />
-      </td>
-
-      <td className="py-3 pr-4 align-middle">
-        {review.available ? (
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-              <input
-                type="radio"
-                name={`update-${review.id}`}
-                checked={review.action === 'retain'}
-                onChange={() => onActionChange(review.id, 'retain')}
-                className="cursor-pointer accent-[#2322F0]"
-              />
-              <span>Retain</span>
-            </label>
-            <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-              <input
-                type="radio"
-                name={`update-${review.id}`}
-                checked={review.action === 'update'}
-                onChange={() => onActionChange(review.id, 'update')}
-                className="cursor-pointer accent-[#2322F0]"
-              />
-              <span>Update</span>
-            </label>
-            {review.action ? (
-              <button
-                type="button"
-                onClick={() => onActionClear(review.id)}
-                className="text-sm text-[#2322F0] hover:underline cursor-pointer"
-              >
-                Clear
-              </button>
-            ) : (
-              <span />
-            )}
-          </div>
-        ) : (
-          <span className="text-[#6C6C75]">-</span>
-        )}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
+            <input
+              type="radio"
+              name={`update-${review.id}`}
+              checked={review.action === 'retain'}
+              onChange={() => onActionChange(review.id, 'retain')}
+              className="cursor-pointer accent-[#2322F0]"
+            />
+            <span>Retain</span>
+          </label>
+          <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
+            <input
+              type="radio"
+              name={`update-${review.id}`}
+              checked={review.action === 'update'}
+              onChange={() => onActionChange(review.id, 'update')}
+              className="cursor-pointer accent-[#2322F0]"
+            />
+            <span>Update</span>
+          </label>
+          {review.action ? (
+            <button
+              type="button"
+              onClick={() => onActionClear(review.id)}
+              className="text-sm text-[#2322F0] hover:underline cursor-pointer"
+            >
+              Clear
+            </button>
+          ) : (
+            <span />
+          )}
+        </div>
       </td>
     </tr>
   )
@@ -684,15 +656,9 @@ function CurrentDate({ value }: { value: string }) {
   return <span className="whitespace-nowrap">{value}</span>
 }
 
-/**
- * The date on the version being offered. Renders a dash when there is nothing
- * to move to, or when the date is unchanged between the two versions.
- */
-function NewDate({ current, next }: { current: string; next?: string }) {
-  if (!next || next === current) {
-    return <span className="text-[#6C6C75]">-</span>
-  }
-  return <span className="whitespace-nowrap">{next}</span>
+/** The date on the version being offered. */
+function NewDate({ value }: { value: string }) {
+  return <span className="whitespace-nowrap">{value}</span>
 }
 
 // ============================================================================
@@ -724,8 +690,6 @@ function ClausePanel({ clause, onClose }: { clause: Clause; onClose: () => void 
 // UpdatePanel — compares versions for a Clause Updates row
 // ============================================================================
 
-type UpdatePanelTab = 'changes' | 'current' | 'pending'
-
 function UpdatePanel({
   review,
   onClose,
@@ -733,19 +697,14 @@ function UpdatePanel({
   review: ClauseUpdateReview
   onClose: () => void
 }) {
-  // Rows with nothing actionable open on their current text, since there is no diff.
-  const [tab, setTab] = useState<UpdatePanelTab>(review.available ? 'changes' : 'current')
+  // Opens on the diff, since that is what the decision hinges on. The toggle
+  // swaps to the plain original text for anyone who wants to read it straight.
+  const [showOriginal, setShowOriginal] = useState(false)
 
   // Reset when a different row is opened.
   useEffect(() => {
-    setTab(review.available ? 'changes' : 'current')
-  }, [review.id, review.available])
-
-  const tabs: { id: UpdatePanelTab; label: string }[] = [
-    ...(review.available ? [{ id: 'changes' as const, label: 'Changes' }] : []),
-    { id: 'current' as const, label: 'Original version' },
-    ...(review.pending ? [{ id: 'pending' as const, label: 'In review' }] : []),
-  ]
+    setShowOriginal(false)
+  }, [review.id])
 
   return (
     <div className="bg-white border border-gray-200 rounded overflow-hidden flex flex-col h-full">
@@ -756,28 +715,42 @@ function UpdatePanel({
         closeLabel="Close update details"
       />
 
-      <div className="px-5 pt-3 border-b border-gray-200 flex-shrink-0">
-        <div className="flex gap-4">
-          {tabs.map(t => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setTab(t.id)}
-              className={`pb-2.5 text-sm font-medium border-b-2 transition-colors ${
-                tab === t.id
-                  ? 'border-[#2322F0] text-[#2322F0]'
-                  : 'border-transparent text-[#6C6C75] hover:text-[#222222]'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+      <div className="px-5 py-3 flex items-center justify-between border-b border-gray-200 flex-shrink-0">
+        <span className="text-xs uppercase tracking-wide text-gray-500 font-semibold">
+          Clause text
+        </span>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <span className="text-sm text-[#222222]">Show original text</span>
+          <input
+            type="checkbox"
+            checked={showOriginal}
+            onChange={e => setShowOriginal(e.target.checked)}
+            className="cursor-pointer accent-[#2322F0]"
+          />
+        </label>
       </div>
 
       <div className="px-5 py-4 overflow-y-auto flex-1">
-        {tab === 'changes' && review.available && (
+        {showOriginal ? (
+          <div className="text-sm text-gray-800 whitespace-pre-line leading-relaxed">
+            {review.current.text}
+          </div>
+        ) : (
           <>
+            {review.pendingReview && (
+              <div className="flex items-start gap-2 px-3 py-2.5 bg-[#FFFCEB] border border-[#FFECA4] rounded mb-4">
+                <AlertTriangle
+                  size={15}
+                  fill="#856C00"
+                  stroke="#FFFCEB"
+                  strokeWidth={2.5}
+                  className="flex-shrink-0 mt-0.5"
+                />
+                <span className="text-xs text-[#222222] leading-relaxed">
+                  AI updated this clause. Pending policy approval. Review changes before proceeding.
+                </span>
+              </div>
+            )}
             <div className="flex items-center gap-4 text-xs mb-3">
               <span className="inline-flex items-center gap-1.5 text-[#6C6C75]">
                 <span className="inline-block w-2.5 h-2.5 rounded-sm bg-[#9F0019]" />
@@ -794,26 +767,6 @@ function UpdatePanel({
                 {review.skippedNote}
               </div>
             )}
-          </>
-        )}
-
-        {tab === 'current' && (
-          <div className="text-sm text-gray-800 whitespace-pre-line leading-relaxed">
-            {review.current.text}
-          </div>
-        )}
-
-        {tab === 'pending' && review.pending && (
-          <>
-            <div className="flex items-start gap-2 px-3 py-2.5 bg-[#FFFCEB] border border-[#FFECA4] rounded mb-4">
-              <Clock size={15} className="flex-shrink-0 mt-0.5 text-[#856C00]" />
-              <span className="text-xs text-[#222222] leading-relaxed">
-                Read-only until approved. You cannot select this version yet.
-              </span>
-            </div>
-            <div className="text-sm text-gray-800 whitespace-pre-line leading-relaxed">
-              {review.pending.text}
-            </div>
           </>
         )}
       </div>

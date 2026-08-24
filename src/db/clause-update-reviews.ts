@@ -1,23 +1,17 @@
 /**
  * Clause Update Reviews data layer.
  *
- * Richer model than `clause-reviews.ts`. It exists because a clause update can
- * arrive in more than one form, and those forms become usable at different times:
+ * A clause update can arrive in two forms:
+ *  - "As published"      — synced verbatim from acquisition.gov. When the clause
+ *                          has an alternate, the alternate instructions are still
+ *                          sitting at the end of the text rather than applied.
+ *  - "Alternate applied" — the clause text after those instructions have been
+ *                          worked into the body.
  *
- *  - "As published"    — synced verbatim from acquisition.gov. When the clause has
- *                        an alternate, the alternate instructions are still sitting
- *                        at the end of the text rather than applied to it.
- *  - "Alternate applied" — the clause text after those instructions have been worked
- *                        into it. This needs policy approval before anyone can use it.
- *
- * So a row can be in one of two shapes:
- *  1. Actionable  — there is a version the user is allowed to move to right now
- *                   (`available*` is populated). Retain vs Update applies.
- *  2. Informational — the set already holds the newest usable version, and the only
- *                   newer thing is still awaiting approval (`pending*` populated,
- *                   `available*` empty). Nothing to decide yet.
- *
- * Unapproved text is never offered as a choice — it is surfaced as status only.
+ * An alternate-applied version may still be with policy for review. That does
+ * not block the Contracting Officer from selecting it — the row carries a
+ * Pending Review flag so they know the text has not been approved yet, and a
+ * warning appears above the table.
  */
 
 export type ClauseVersionKind = 'original' | 'as-published' | 'alternate-applied'
@@ -34,33 +28,29 @@ export interface ClauseUpdateReview {
   id: number
   clauseNumber: string
   title: string
-  /** True when a FAR alternate applies, which is what creates the two-step flow. */
+  /** True when a FAR alternate applies to this clause. */
   hasAlternate: boolean
-  /** Short plain-language summary of why this row looks the way it does. */
+  /** True when the offered version has not cleared policy review yet. */
+  pendingReview: boolean
+  /** Short plain-language summary of the situation for this row. */
   situation: string
   /** The version currently sitting in the clause set. */
   current: ClauseVersion
-  /** The newest approved version the user may move to. Absent when nothing is actionable. */
-  available?: ClauseVersion
-  /** An alternate cleanup that exists but has not been approved yet. */
-  pending?: {
-    label: string
-    submittedOn: string
-    submittedBy: string
-    text: string
-  }
-  /** Set when an interim as-published version was superseded before anyone adopted it. */
+  /** The newer version on offer. */
+  available: ClauseVersion
+  /** Set when an interim version was superseded before anyone adopted it. */
   skippedNote?: string
   action?: 'retain' | 'update'
 }
 
 const clauseUpdateReviews: ClauseUpdateReview[] = [
-  // ── 1. No alternate. Plain one-step update. ────────────────────────────────
+  // ── 1. No alternate. Plain one-step update, nothing pending. ───────────────
   {
     id: 1,
     clauseNumber: '52.203-14',
     title: 'Display of Hotline Poster',
     hasAlternate: false,
+    pendingReview: false,
     situation: 'A newer version was published. Nothing else is pending.',
     current: {
       label: 'Dec 2007',
@@ -78,14 +68,14 @@ const clauseUpdateReviews: ClauseUpdateReview[] = [
     },
   },
 
-  // ── 2. Alternate applies. As-published is usable now; cleanup still in review. ──
+  // ── 2. Alternate applied, still with policy. Selectable with a warning. ────
   {
     id: 2,
     clauseNumber: '52.222-26',
     title: 'Equal Opportunity',
     hasAlternate: true,
-    situation:
-      'You can move to the published text now. A version with Alternate I applied is with policy for approval.',
+    pendingReview: true,
+    situation: 'The version with Alternate I applied is still with policy for approval.',
     current: {
       label: 'Sep 2016',
       kind: 'original',
@@ -94,28 +84,22 @@ const clauseUpdateReviews: ClauseUpdateReview[] = [
       text: 'Equal Opportunity (Sep 2016)\n\n(a) The Contractor agrees that it will not discriminate against any employee or applicant for employment because of race, color, religion, sex, sexual orientation, gender identity, or national origin.\n\n(b) The Contractor will take affirmative action to ensure that applicants are employed, and that employees are treated during employment, without regard to their race, color, religion, sex, sexual orientation, gender identity, or national origin.',
     },
     available: {
-      label: 'Aug 2026, as published',
-      kind: 'as-published',
-      effectiveDate: 'Aug 15, 2026',
-      lastUpdated: 'Aug 05, 2026',
-      text: 'Equal Opportunity (Aug 2026)\n\n(a) The Contractor agrees that it will not discriminate against any employee or applicant for employment because of race, color, religion, sex, sexual orientation, gender identity, national origin, or protected veteran status.\n\n(b) The Contractor will take affirmative action to ensure that applicants are employed, and that employees are treated during employment, without regard to the characteristics listed in paragraph (a) of this clause.\n\n(c) The Contractor shall post the notice described in 22.805(b) in a conspicuous place.\n\n— — —\nAlternate I (Aug 2026). As prescribed in 22.810(f), substitute the following for paragraph (c) of the basic clause and add paragraph (d).',
-    },
-    pending: {
       label: 'Aug 2026, Alternate I applied',
-      submittedOn: 'Aug 08, 2026',
-      submittedBy: 'sarah.chen',
+      kind: 'alternate-applied',
+      effectiveDate: 'Aug 15, 2026',
+      lastUpdated: 'Aug 08, 2026',
       text: 'Equal Opportunity (Aug 2026) — Alternate I applied\n\n(a) The Contractor agrees that it will not discriminate against any employee or applicant for employment because of race, color, religion, sex, sexual orientation, gender identity, national origin, or protected veteran status.\n\n(b) The Contractor will take affirmative action to ensure that applicants are employed, and that employees are treated during employment, without regard to the characteristics listed in paragraph (a) of this clause.\n\n(c) The Contractor shall post the notice described in 22.805(b) in a conspicuous place accessible to all employees and applicants, and shall provide an electronic copy on request.\n\n(d) The Contractor shall report any known or suspected violation of this clause to the Contracting Officer within 5 business days of discovery.',
     },
   },
 
-  // ── 3. Set already holds as-published. Cleanup still in review. No action. ──
+  // ── 3. Set holds as-published. Alternate cleanup with policy, selectable. ──
   {
     id: 3,
     clauseNumber: '52.227-14',
     title: 'Rights in Data—General',
     hasAlternate: true,
-    situation:
-      'Your set already has the newest usable text. A version with Alternate II applied is with policy for approval.',
+    pendingReview: true,
+    situation: 'The version with Alternate II applied is still with policy for approval.',
     current: {
       label: 'Aug 2026, as published',
       kind: 'as-published',
@@ -123,20 +107,22 @@ const clauseUpdateReviews: ClauseUpdateReview[] = [
       lastUpdated: 'Aug 05, 2026',
       text: 'Rights in Data—General (Aug 2026)\n\n(a) Definitions. As used in this clause—"Computer database" or "database" means a collection of recorded information in a form capable of, and for the purpose of, being stored in, processed, and operated on by a computer.\n\n(b) Allocation of rights. Except as provided in paragraph (c) of this clause regarding copyright, the Government shall have unlimited rights in data first produced in the performance of this contract and form, fit, and function data delivered under this contract.\n\n— — —\nAlternate II (Aug 2026). As prescribed in 27.409(b)(2), add the following paragraph (g) to the basic clause.',
     },
-    pending: {
+    available: {
       label: 'Aug 2026, Alternate II applied',
-      submittedOn: 'Aug 12, 2026',
-      submittedBy: 'sarah.chen',
+      kind: 'alternate-applied',
+      effectiveDate: 'Aug 15, 2026',
+      lastUpdated: 'Aug 12, 2026',
       text: 'Rights in Data—General (Aug 2026) — Alternate II applied\n\n(a) Definitions. As used in this clause—"Computer database" or "database" means a collection of recorded information in a form capable of, and for the purpose of, being stored in, processed, and operated on by a computer.\n\n(b) Allocation of rights. Except as provided in paragraph (c) of this clause regarding copyright, the Government shall have unlimited rights in data first produced in the performance of this contract and form, fit, and function data delivered under this contract.\n\n(g) Limited rights data. The Contractor may withhold limited rights data from delivery, provided it identifies the withheld data to the Contracting Officer within 30 days of award.',
     },
   },
 
-  // ── 4. Set holds as-published. Cleanup now approved. Actionable. ───────────
+  // ── 4. Set holds as-published. Alternate cleanup approved. ─────────────────
   {
     id: 4,
     clauseNumber: '52.216-25',
     title: 'Contract Definitization',
     hasAlternate: true,
+    pendingReview: false,
     situation: 'The version with Alternate I applied is approved and ready to use.',
     current: {
       label: 'Aug 2026, as published',
@@ -154,12 +140,13 @@ const clauseUpdateReviews: ClauseUpdateReview[] = [
     },
   },
 
-  // ── 5. Set holds the original. Cleanup approved; interim text never adopted. ──
+  // ── 5. Set holds the original. Interim published text never adopted. ──────
   {
     id: 5,
     clauseNumber: '52.223-6',
     title: 'Drug-Free Workplace',
     hasAlternate: true,
+    pendingReview: false,
     situation: 'The version with Alternate I applied is approved and ready to use.',
     current: {
       label: 'May 2001',
