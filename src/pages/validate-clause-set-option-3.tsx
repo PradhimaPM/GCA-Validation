@@ -314,6 +314,36 @@ export default function ValidateClauseSetOption3() {
 }
 
 // ============================================================================
+// SourceCell — how the clause got here, with a link to its source clause set
+// ============================================================================
+
+function SourceCell({
+  recommendedBy,
+  reference,
+}: {
+  recommendedBy: Clause['recommendedBy']
+  reference?: string
+}) {
+  if (!reference) {
+    return <span>{recommendedBy}</span>
+  }
+  return (
+    <span className="inline-flex items-center gap-1">
+      <span>{recommendedBy}</span>
+      <span>(</span>
+      <button
+        type="button"
+        className="inline-flex items-center gap-1 text-[#2322F0] hover:underline font-medium"
+      >
+        <ExternalLink size={14} className="flex-shrink-0" />
+        {reference}
+      </button>
+      <span>)</span>
+    </span>
+  )
+}
+
+// ============================================================================
 // ClauseSection — Inclusions / Exclusions grid with per-row Accept/Reject
 // ============================================================================
 
@@ -345,10 +375,6 @@ function ClauseSection({
   onClearAll,
 }: ClauseSectionProps) {
   const hasAnySelection = clauses.some(c => c.action)
-
-  // Clauses in a section are copied from a single source clause set, so the link
-  // appears once above the table instead of repeating on every row.
-  const sourceReference = clauses.find(c => c.sourceReference)?.sourceReference
 
   return (
     <div className="mb-6">
@@ -389,19 +415,6 @@ function ClauseSection({
         </div>
       </div>
 
-      {sourceReference && (
-        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 my-3 text-sm text-[#6C6C75]">
-          <span>Clauses are copied from</span>
-          <button
-            type="button"
-            className="inline-flex items-center gap-1 text-[#2322F0] hover:underline font-medium"
-          >
-            <ExternalLink size={14} className="flex-shrink-0" />
-            {sourceReference}
-          </button>
-        </div>
-      )}
-
       <table className="w-full text-sm table-fixed">
         <colgroup>
           <col />
@@ -434,7 +447,9 @@ function ClauseSection({
                   {row.clauseNumber} | {row.title}
                 </button>
               </td>
-              <td className="py-3 pr-4">{row.recommendedBy}</td>
+              <td className="py-3 pr-4">
+                <SourceCell recommendedBy={row.recommendedBy} reference={row.sourceReference} />
+              </td>
               <td className="py-3 pr-4">{row.usage}</td>
               <td className="py-3 pr-4">
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
