@@ -134,7 +134,7 @@ export default function ValidateClauseSetOption3() {
               className="flex-shrink-0"
             />
             <span className="text-sm text-[#222222]">
-              Review the items below before finalizing the clause set. Make sure all clauses are addressed to complete validation.
+              Review the items below before finalizing the clause set. Make sure all are addressed to complete validation.
             </span>
           </div>
 
@@ -681,6 +681,18 @@ function NewDate({ value }: { value: string }) {
 // ============================================================================
 
 function ClausePanel({ clause, onClose }: { clause: Clause; onClose: () => void }) {
+  const [tab, setTab] = useState<'prescription' | 'clause'>('prescription')
+
+  // Reset to the first tab when a different clause is opened.
+  useEffect(() => {
+    setTab('prescription')
+  }, [clause.id])
+
+  const tabs = [
+    { id: 'prescription' as const, label: 'Prescription text' },
+    { id: 'clause' as const, label: 'Clause text' },
+  ]
+
   return (
     <div className="bg-white border border-gray-200 rounded overflow-hidden flex flex-col h-full">
       <PanelHeader
@@ -689,12 +701,29 @@ function ClausePanel({ clause, onClose }: { clause: Clause; onClose: () => void 
         onClose={onClose}
         closeLabel="Close clause details"
       />
-      <div className="px-5 py-4 overflow-y-auto flex-1">
-        <div className="text-xs uppercase tracking-wide text-gray-500 font-semibold mb-2">
-          Prescription text
+
+      <div className="px-5 pt-3 border-b border-gray-200 flex-shrink-0">
+        <div className="flex gap-4">
+          {tabs.map(t => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setTab(t.id)}
+              className={`pb-2.5 text-sm font-medium border-b-2 transition-colors ${
+                tab === t.id
+                  ? 'border-[#2322F0] text-[#2322F0]'
+                  : 'border-transparent text-[#6C6C75] hover:text-[#222222]'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
+      </div>
+
+      <div className="px-5 py-4 overflow-y-auto flex-1">
         <div className="text-sm text-gray-800 whitespace-pre-line leading-relaxed">
-          {clause.text}
+          {tab === 'prescription' ? clause.text : clause.clauseText}
         </div>
       </div>
     </div>
