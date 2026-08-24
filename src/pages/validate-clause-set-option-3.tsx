@@ -223,7 +223,7 @@ export default function ValidateClauseSetOption3() {
                     value={[
                       <TextItem
                         key="d"
-                        text="New versions of these clauses are available. Accept the update or keep the current version. Clause set finalization remains unblocked."
+                        text="New versions of these clauses are available. Accept the update or keep the current version."
                         color="SECONDARY"
                         size="STANDARD"
                       />,
