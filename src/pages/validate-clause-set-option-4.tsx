@@ -798,7 +798,8 @@ function UpdatePanel({
                   className="flex-shrink-0 mt-0.5"
                 />
                 <span className="text-xs text-[#222222] leading-relaxed">
-                  This version is pending policy approval. The text may change once approved.
+                  {review.pendingNotice ??
+                    'This version is pending policy approval. The text may change once approved.'}
                 </span>
               </div>
             )}

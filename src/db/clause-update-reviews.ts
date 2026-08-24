@@ -32,6 +32,12 @@ export interface ClauseUpdateReview {
   hasAlternate: boolean
   /** True when the offered version has not cleared policy review yet. */
   pendingReview: boolean
+  /**
+   * Overrides the default pending-review banner in the side panel. Used when the
+   * reason is specific to the row — for example, AI could not apply the
+   * alternate instructions, so the raw text came through untouched.
+   */
+  pendingNotice?: string
   /** Short plain-language summary of the situation for this row. */
   situation: string
   /** The version currently sitting in the clause set. */
@@ -100,6 +106,8 @@ const clauseUpdateReviews: ClauseUpdateReview[] = [
     hasAlternate: true,
     pendingReview: true,
     situation: 'The version with Alternate II applied is still with policy for approval.',
+    pendingNotice:
+      'AI could not process this clause. It contains the full clause text. Review and make changes from the clause set summary accordingly.',
     current: {
       label: 'Aug 2026, as published',
       kind: 'as-published',

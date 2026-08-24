@@ -762,7 +762,8 @@ function UpdatePanel({
                   className="flex-shrink-0 mt-0.5"
                 />
                 <span className="text-xs text-[#222222] leading-relaxed">
-                  AI updated this clause. Pending policy approval. Review changes before proceeding.
+                  {review.pendingNotice ??
+                    'AI updated this clause. Pending policy approval. Review changes before proceeding.'}
                 </span>
               </div>
             )}
