@@ -796,16 +796,7 @@ function UpdatePanel({
                 </span>
               </div>
             )}
-            <div className="flex items-center gap-4 text-xs mb-3">
-              <span className="inline-flex items-center gap-1.5 text-[#6C6C75]">
-                <span className="inline-block w-2.5 h-2.5 rounded-sm bg-[#9F0019]" />
-                Removed
-              </span>
-              <span className="inline-flex items-center gap-1.5 text-[#6C6C75]">
-                <span className="inline-block w-2.5 h-2.5 rounded-sm bg-[#117C00]" />
-                Added
-              </span>
-            </div>
+            <DiffLegend />
             <TextDiff oldText={review.current.text} newText={review.available.text} />
             {review.skippedNote && (
               <div className="mt-4 px-3 py-2.5 bg-[#F5F5F7] border border-gray-200 rounded text-xs text-[#6C6C75]">
@@ -850,6 +841,31 @@ function PanelHeader({
         <X size={20} />
       </button>
     </div>
+  )
+}
+
+// ============================================================================
+// DiffLegend — shows the removed / added styling using the styling itself
+// ============================================================================
+
+function DiffLegend() {
+  return (
+    <RichTextDisplayField
+      value={[
+        <TextItem key="rl" text="Text removed: " color="SECONDARY" size="STANDARD" />,
+        <TextItem
+          key="rv"
+          text="Text removed"
+          style="STRIKETHROUGH"
+          color="#9F0019"
+          size="STANDARD"
+        />,
+        <TextItem key="sp" text="   " size="STANDARD" />,
+        <TextItem key="al" text="Text added: " color="SECONDARY" size="STANDARD" />,
+        <TextItem key="av" text="Text added" color="#117C00" size="STANDARD" />,
+      ]}
+      marginBelow="LESS"
+    />
   )
 }
 
