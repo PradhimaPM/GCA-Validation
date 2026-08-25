@@ -53,8 +53,8 @@ const clauseUpdateReviews: ClauseUpdateReview[] = [
   // ── 1. No alternate. Plain one-step update, nothing pending. ───────────────
   {
     id: 1,
-    clauseNumber: '52.203-14',
-    title: 'Display of Hotline Poster',
+    clauseNumber: '52.203-13',
+    title: 'Contractor Code of Business Ethics and Conduct.',
     hasAlternate: false,
     pendingReview: false,
     situation: 'A newer version was published. Nothing else is pending.',
@@ -77,8 +77,8 @@ const clauseUpdateReviews: ClauseUpdateReview[] = [
   // ── 2. Alternate applied, still with policy. Selectable with a warning. ────
   {
     id: 2,
-    clauseNumber: '52.222-26',
-    title: 'Equal Opportunity',
+    clauseNumber: '52.203-6',
+    title: 'Restrictions on Subcontractor Sales to the Government.',
     hasAlternate: true,
     pendingReview: true,
     situation: 'The version with Alternate I applied is still with policy for approval.',
@@ -101,8 +101,8 @@ const clauseUpdateReviews: ClauseUpdateReview[] = [
   // ── 3. Set holds as-published. Alternate cleanup with policy, selectable. ──
   {
     id: 3,
-    clauseNumber: '52.227-14',
-    title: 'Rights in Data—General',
+    clauseNumber: '52.203-14',
+    title: 'Display of Hotline Poster(s).',
     hasAlternate: true,
     pendingReview: true,
     situation: 'The version with Alternate II applied is still with policy for approval.',
@@ -127,8 +127,8 @@ const clauseUpdateReviews: ClauseUpdateReview[] = [
   // ── 4. Set holds as-published. Alternate cleanup approved. ─────────────────
   {
     id: 4,
-    clauseNumber: '52.216-25',
-    title: 'Contract Definitization',
+    clauseNumber: '52.203-15',
+    title: 'Whistleblower Protections Under the American Recovery and Reinvestment Act of 2009.',
     hasAlternate: true,
     pendingReview: false,
     situation: 'The version with Alternate I applied is approved and ready to use.',
@@ -151,8 +151,8 @@ const clauseUpdateReviews: ClauseUpdateReview[] = [
   // ── 5. Set holds the original. Interim published text never adopted. ──────
   {
     id: 5,
-    clauseNumber: '52.223-6',
-    title: 'Drug-Free Workplace',
+    clauseNumber: '52.203-11',
+    title: 'Certification and Disclosure Regarding Payments to Influence Certain Federal Transactions.',
     hasAlternate: true,
     pendingReview: false,
     situation: 'The version with Alternate I applied is approved and ready to use.',

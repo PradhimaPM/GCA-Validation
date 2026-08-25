@@ -15,7 +15,7 @@ const incompleteClauses: IncompleteClause[] = [
   {
     id: 1,
     clauseNumber: '52.203-14',
-    title: 'Display of Hotline Poster',
+    title: 'Display of Hotline Poster(s).',
     error: 'Incomplete Clause',
   },
 ]

@@ -23,7 +23,7 @@ const clauseReviews: ClauseReview[] = [
   {
     id: 1,
     clauseNumber: '52.203-3',
-    title: 'Gratuities',
+    title: 'Gratuities.',
     status: 'Pending Review',
     existingEffectiveDate: 'Jul 21, 2026',
     existingLastUpdated: 'Jul 17, 2026',
@@ -37,7 +37,7 @@ const clauseReviews: ClauseReview[] = [
   {
     id: 2,
     clauseNumber: '52.203-14',
-    title: 'Display of Hotline Poster',
+    title: 'Display of Hotline Poster(s).',
     status: 'Updated',
     existingEffectiveDate: 'Jun 10, 2026',
     existingLastUpdated: 'Jun 12, 2026',

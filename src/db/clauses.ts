@@ -7,7 +7,7 @@ export interface Clause {
   id: number
   clauseNumber: string
   title: string
-  recommendedBy: 'Rule' | 'Template' | 'Copied' | 'Previous set'
+  recommendedBy: 'Rule' | 'Template' | 'Copied' | 'Previous set' | 'Manually'
   sourceReference?: string
   usage: 'Required' | 'Not Required'
   type: 'inclusion' | 'exclusion'
@@ -22,8 +22,8 @@ const clauses: Clause[] = [
   // Inclusions
   {
     id: 1,
-    clauseNumber: '52.222-26',
-    title: 'Equal Opportunity',
+    clauseNumber: '52.203-6',
+    title: 'Restrictions on Subcontractor Sales to the Government.',
     recommendedBy: 'Rule',
     usage: 'Required',
     type: 'inclusion',
@@ -33,8 +33,8 @@ const clauses: Clause[] = [
   },
   {
     id: 2,
-    clauseNumber: '52.225-5',
-    title: 'Trade Agreements',
+    clauseNumber: '52.203-7',
+    title: 'Anti-Kickback Procedures.',
     recommendedBy: 'Template',
     usage: 'Not Required',
     type: 'inclusion',
@@ -44,8 +44,8 @@ const clauses: Clause[] = [
   },
   {
     id: 3,
-    clauseNumber: '52.216-25',
-    title: 'Contract Definitization',
+    clauseNumber: '52.203-8',
+    title: 'Cancellation, Rescission, and Recovery of Funds for Illegal or Improper Activity.',
     recommendedBy: 'Template',
     usage: 'Required',
     type: 'inclusion',
@@ -56,8 +56,8 @@ const clauses: Clause[] = [
   // Exclusions
   {
     id: 4,
-    clauseNumber: '52.227-14',
-    title: 'Rights in Data—General',
+    clauseNumber: '52.203-10',
+    title: 'Price or Fee Adjustment for Illegal or Improper Activity.',
     recommendedBy: 'Manually',
     // sourceReference: 'SOC 12345',
     usage: 'Required',
@@ -68,8 +68,8 @@ const clauses: Clause[] = [
   },
   {
     id: 5,
-    clauseNumber: '52.223-6',
-    title: 'Drug-Free Workplace',
+    clauseNumber: '52.203-11',
+    title: 'Certification and Disclosure Regarding Payments to Influence Certain Federal Transactions.',
     recommendedBy: 'Previous set',
     sourceReference: 'SOC 12345',
     usage: 'Not Required',
@@ -80,8 +80,8 @@ const clauses: Clause[] = [
   },
   {
     id: 6,
-    clauseNumber: '52.215-10',
-    title: 'Contract Definitization',
+    clauseNumber: '52.203-12',
+    title: 'Limitation on Payments to Influence Certain Federal Transactions.',
     recommendedBy: 'Copied',
     sourceReference: 'SOC 12345',
     usage: 'Required',
