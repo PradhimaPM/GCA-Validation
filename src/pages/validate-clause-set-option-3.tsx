@@ -158,7 +158,7 @@ export default function ValidateClauseSetOption3() {
                     value={[
                       <TextItem
                         key="d"
-                        text="Include or exclude these clauses based on current rules and templates."
+                        text="Review the clauses suggested based on current rules and templates."
                         color="SECONDARY"
                         size="STANDARD"
                       />,
