@@ -9,7 +9,7 @@ import {
   TextItem,
   TagField,
 } from '@pglevy/sailwind'
-import { X, Info, ExternalLink, AlertTriangle } from 'lucide-react'
+import { X, Info, ExternalLink, AlertTriangle, CheckCircle } from 'lucide-react'
 import {
   getClauses,
   updateClauseAction,
@@ -30,6 +30,8 @@ import { getIncompleteClauses, type IncompleteClause } from '../db/incomplete-cl
 type PanelView =
   | { kind: 'clause'; clause: Clause }
   | { kind: 'update'; review: ClauseUpdateReview }
+  /** Clause Updates has no rows — the pane still opens and explains why. */
+  | { kind: 'updates-empty' }
 
 export default function ValidateClauseSetOption3() {
   const [clauses, setClauses] = useState<Clause[]>([])
@@ -223,7 +225,11 @@ export default function ValidateClauseSetOption3() {
                     value={[
                       <TextItem
                         key="d"
-                        text="New versions of these clauses are available. Accept the update or keep the current version."
+                        text={
+                          reviews.length === 0
+                            ? 'No clause updates are available. Every clause in this set is on its latest version.'
+                            : 'New versions of these clauses are available. Accept the update or keep the current version.'
+                        }
                         color="SECONDARY"
                         size="STANDARD"
                       />,
@@ -249,7 +255,9 @@ export default function ValidateClauseSetOption3() {
                   <UpdateTable
                     reviews={reviews}
                     selectedReviewId={panel?.kind === 'update' ? panel.review.id : undefined}
+                    isEmptySelected={panel?.kind === 'updates-empty'}
                     onReviewClick={r => setPanel({ kind: 'update', review: r })}
+                    onEmptyClick={() => setPanel({ kind: 'updates-empty' })}
                     onActionChange={handleReviewActionChange}
                     onActionClear={handleReviewActionClear}
                   />
@@ -260,7 +268,7 @@ export default function ValidateClauseSetOption3() {
               <CardLayout padding="NONE" showBorder={true} showShadow={false} style="STANDARD">
                 <div className="px-6 py-2.5 bg-[#F5F5F7] border-b border-gray-200">
                   <HeadingField
-                    text="Incomplete clauses"
+                    text="Incomplete Clauses"
                     size="SMALL"
                     headingTag="H2"
                     fontWeight="SEMI_BOLD"
@@ -290,8 +298,10 @@ export default function ValidateClauseSetOption3() {
               <div className="w-full lg:w-[380px] xl:w-[440px] lg:flex-shrink-0 h-[650px] lg:sticky lg:top-0">
                 {panel.kind === 'clause' ? (
                   <ClausePanel clause={panel.clause} onClose={() => setPanel(null)} />
-                ) : (
+                ) : panel.kind === 'update' ? (
                   <UpdatePanel review={panel.review} onClose={() => setPanel(null)} />
+                ) : (
+                  <UpdatesEmptyPanel onClose={() => setPanel(null)} />
                 )}
               </div>
             )}
@@ -439,12 +449,15 @@ function ClauseSection({
               }`}
             >
               <td className="py-3 pr-4">
+                <span className="text-[#222222]">
+                  {row.clauseNumber} | {row.title}
+                </span>{' '}
                 <button
                   type="button"
                   onClick={() => onClauseClick(row)}
-                  className="text-[#2322F0] hover:underline text-left"
+                  className="text-[#2322F0] hover:underline whitespace-nowrap"
                 >
-                  {row.clauseNumber} | {row.title}
+                  (View)
                 </button>
               </td>
               <td className="py-3 pr-4">
@@ -522,7 +535,11 @@ function IncompleteTable({ incomplete }: { incomplete: IncompleteClause[] }) {
 interface UpdateTableProps {
   reviews: ClauseUpdateReview[]
   selectedReviewId?: number
+  /** True when the side pane is showing the Clause Updates empty state. */
+  isEmptySelected: boolean
   onReviewClick: (review: ClauseUpdateReview) => void
+  /** Opens the side pane on the empty state when there are no rows. */
+  onEmptyClick: () => void
   onActionChange: (id: number, action: 'retain' | 'update') => void
   onActionClear: (id: number) => void
 }
@@ -530,18 +547,12 @@ interface UpdateTableProps {
 function UpdateTable({
   reviews,
   selectedReviewId,
+  isEmptySelected,
   onReviewClick,
+  onEmptyClick,
   onActionChange,
   onActionClear,
 }: UpdateTableProps) {
-  if (reviews.length === 0) {
-    return (
-      <div className="text-sm text-[#6C6C75] py-2">
-        All clauses are the latest version.
-      </div>
-    )
-  }
-
   return (
     <table className="w-full text-sm table-fixed">
       <colgroup>
@@ -561,6 +572,19 @@ function UpdateTable({
         </tr>
       </thead>
       <tbody>
+        {reviews.length === 0 && (
+          <tr className={`border-b border-gray-100 ${isEmptySelected ? 'bg-blue-50' : ''}`}>
+            <td colSpan={5} className="py-3 pr-4">
+              <button
+                type="button"
+                onClick={onEmptyClick}
+                className="text-[#2322F0] hover:underline text-left"
+              >
+                All clauses are the latest version.
+              </button>
+            </td>
+          </tr>
+        )}
         {reviews.map(r => (
           <UpdateRow
             key={r.id}
@@ -592,12 +616,15 @@ function UpdateRow({
   return (
     <tr className={`border-b border-gray-100 ${isSelected ? 'bg-blue-50' : ''}`}>
       <td className="py-3 pr-4 align-middle">
+        <span className="text-[#222222]">
+          {review.clauseNumber} | {review.title}
+        </span>{' '}
         <button
           type="button"
           onClick={() => onReviewClick(review)}
-          className="text-[#2322F0] hover:underline text-left"
+          className="text-[#2322F0] hover:underline whitespace-nowrap"
         >
-          {review.clauseNumber} | {review.title}
+          (View)
         </button>
       </td>
 
@@ -731,6 +758,48 @@ function ClausePanel({ clause, onClose }: { clause: Clause; onClose: () => void 
 }
 
 // ============================================================================
+// Metadata change summary — used both when the clause text is unchanged and
+// alongside the redline when text + metadata both changed.
+// ============================================================================
+
+type MetadataChange = { label: string; from: string; to: string }
+
+/** Builds the list of metadata fields that differ between the two versions. */
+function metadataChanges(review: ClauseUpdateReview): MetadataChange[] {
+  const currentName = review.current.clauseName ?? review.title
+  const availableName = review.available.clauseName ?? review.title
+  return [
+    currentName !== availableName && {
+      label: 'Clause name',
+      from: currentName,
+      to: availableName,
+    },
+    review.current.effectiveDate !== review.available.effectiveDate && {
+      label: 'Effective date',
+      from: review.current.effectiveDate,
+      to: review.available.effectiveDate,
+    },
+  ].filter(Boolean) as MetadataChange[]
+}
+
+function MetadataChangeList({ changes }: { changes: MetadataChange[] }) {
+  return (
+    <div className="space-y-5">
+      {changes.map(c => (
+        <div key={c.label} className="text-sm">
+          <div className="text-[#222222] font-semibold mb-1.5">{c.label}</div>
+          <div className="flex items-center gap-2.5 flex-wrap leading-relaxed text-[#222222]">
+            <span>{c.from}</span>
+            <span className="text-gray-500">changed to</span>
+            <span>{c.to}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ============================================================================
 // UpdatePanel — compares versions for a Clause Updates row
 // ============================================================================
 
@@ -750,6 +819,60 @@ function UpdatePanel({
     setShowOriginal(false)
   }, [review.id])
 
+  // The clause body is identical between versions — skip the redline and show
+  // what actually changed (effective date, version name). Retain/Update still
+  // applies, since there is a new version to adopt.
+  if (review.clauseTextUnchanged) {
+    return (
+      <div className="bg-white border border-gray-200 rounded overflow-hidden flex flex-col h-full">
+        <PanelHeader
+          eyebrow={review.clauseNumber}
+          title={review.title}
+          onClose={onClose}
+          closeLabel="Close update details"
+        />
+        <div className="px-5 py-5 overflow-y-auto flex-1">
+          <div className="flex items-start gap-2 px-3 py-2.5 bg-[#F5F5FC] border border-[#DCDEF5] rounded mb-6">
+            <Info
+              size={15}
+              fill="#2322F0"
+              stroke="#F5F5FC"
+              strokeWidth={2.5}
+              className="flex-shrink-0 mt-0.5"
+            />
+            <span className="text-xs text-[#222222] leading-relaxed">
+              The clause text is unchanged in this version. Only the details below were updated.
+            </span>
+          </div>
+
+          <span className="text-xs uppercase tracking-wide text-gray-500 font-semibold">
+            What changed
+          </span>
+          <div className="mt-4">
+            <MetadataChangeList changes={metadataChanges(review)} />
+          </div>
+
+          <div className="mt-8 pt-5 border-t border-gray-200">
+            <span className="text-xs uppercase tracking-wide text-gray-500 font-semibold">
+              Clause text
+            </span>
+            <div className="mt-3 flex flex-col items-center text-center py-8 px-4 bg-[#FAFAFC] border border-gray-200 rounded">
+              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[#EDF7EE] mb-3">
+                <CheckCircle size={26} stroke="#70BF73" strokeWidth={2} />
+              </div>
+              <span className="text-sm text-[#222222] font-semibold mb-1">
+                No changes to the clause text
+              </span>
+              <span className="text-xs text-[#6C6C75] leading-relaxed">
+                The clause text is identical to the current version. Only the details above changed.
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="bg-white border border-gray-200 rounded overflow-hidden flex flex-col h-full">
       <PanelHeader
@@ -759,43 +882,77 @@ function UpdatePanel({
         closeLabel="Close update details"
       />
 
-      <div className="px-5 py-3 flex items-center justify-between border-b border-gray-200 flex-shrink-0">
-        <span className="text-xs uppercase tracking-wide text-gray-500 font-semibold">
-          Clause text
-        </span>
-        <label className="flex items-center gap-2 cursor-pointer">
-          <span className="text-sm text-[#222222]">Show original text</span>
-          <input
-            type="checkbox"
-            checked={showOriginal}
-            onChange={e => setShowOriginal(e.target.checked)}
-            className="cursor-pointer accent-[#2322F0]"
-          />
-        </label>
-      </div>
+      {/* When a metadata summary leads, the Clause text label + toggle move
+          inline above the redline so the heading sits with its content. */}
+      {!review.showMetadataSummary && (
+        <div className="px-5 py-3 flex items-center justify-between border-b border-gray-200 flex-shrink-0">
+          <span className="text-xs uppercase tracking-wide text-gray-500 font-semibold">
+            Clause text
+          </span>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <span className="text-sm text-[#222222]">Show original text</span>
+            <input
+              type="checkbox"
+              checked={showOriginal}
+              onChange={e => setShowOriginal(e.target.checked)}
+              className="cursor-pointer accent-[#2322F0]"
+            />
+          </label>
+        </div>
+      )}
 
       <div className="px-5 py-4 overflow-y-auto flex-1">
+        {review.pendingReview && (
+          <div className="flex items-start gap-2 px-3 py-2.5 bg-[#FFFCEB] border border-[#FFECA4] rounded mb-4">
+            <AlertTriangle
+              size={15}
+              fill="#856C00"
+              stroke="#FFFCEB"
+              strokeWidth={2.5}
+              className="flex-shrink-0 mt-0.5"
+            />
+            <span className="text-xs text-[#222222] leading-relaxed">
+              {review.pendingNotice ??
+                'AI updated this clause. Pending policy approval. Review changes before proceeding.'}
+            </span>
+          </div>
+        )}
+
+        {review.showMetadataSummary && (
+          <div className="mb-6 pb-6 border-b border-gray-200">
+            <span className="text-xs uppercase tracking-wide text-gray-500 font-semibold">
+              What changed
+            </span>
+            <div className="mt-4">
+              <MetadataChangeList changes={metadataChanges(review)} />
+            </div>
+          </div>
+        )}
+
+        {/* Inline Clause text header — only when the metadata summary leads. */}
+        {review.showMetadataSummary && (
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs uppercase tracking-wide text-gray-500 font-semibold">
+              Clause text
+            </span>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <span className="text-sm text-[#222222]">Show original text</span>
+              <input
+                type="checkbox"
+                checked={showOriginal}
+                onChange={e => setShowOriginal(e.target.checked)}
+                className="cursor-pointer accent-[#2322F0]"
+              />
+            </label>
+          </div>
+        )}
+
         {showOriginal ? (
           <div className="text-sm text-gray-800 whitespace-pre-line leading-relaxed">
             {review.current.text}
           </div>
         ) : (
           <>
-            {review.pendingReview && (
-              <div className="flex items-start gap-2 px-3 py-2.5 bg-[#FFFCEB] border border-[#FFECA4] rounded mb-4">
-                <AlertTriangle
-                  size={15}
-                  fill="#856C00"
-                  stroke="#FFFCEB"
-                  strokeWidth={2.5}
-                  className="flex-shrink-0 mt-0.5"
-                />
-                <span className="text-xs text-[#222222] leading-relaxed">
-                  {review.pendingNotice ??
-                    'AI updated this clause. Pending policy approval. Review changes before proceeding.'}
-                </span>
-              </div>
-            )}
             <DiffLegend />
             <TextDiff oldText={review.current.text} newText={review.available.text} />
             {review.skippedNote && (
@@ -805,6 +962,54 @@ function UpdatePanel({
             )}
           </>
         )}
+      </div>
+    </div>
+  )
+}
+
+// ============================================================================
+// UpdatesEmptyPanel — Clause Updates has no rows. The pane still opens so the
+// CO gets an explicit confirmation rather than wondering if it failed to load.
+// ============================================================================
+
+function UpdatesEmptyPanel({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="bg-white border border-gray-200 rounded overflow-hidden flex flex-col h-full">
+      <PanelHeader
+        eyebrow="Clause Updates"
+        title="No updates available"
+        onClose={onClose}
+        closeLabel="Close update details"
+      />
+
+      <div className="px-5 py-4 overflow-y-auto flex-1">
+        <div className="flex flex-col items-center text-center py-10">
+          <CheckCircle
+            size={40}
+            fill="#117C00"
+            stroke="#FFFFFF"
+            strokeWidth={2}
+            className="mb-4"
+          />
+          <HeadingField
+            text="Everything is up to date"
+            size="SMALL"
+            headingTag="H3"
+            fontWeight="SEMI_BOLD"
+            marginBelow="LESS"
+          />
+          <RichTextDisplayField
+            align="CENTER"
+            value={[
+              <TextItem
+                key="body"
+                text="Every clause in this set is on its latest published version, so there is nothing to retain or update. New versions will appear here as they are published."
+                color="SECONDARY"
+                size="STANDARD"
+              />,
+            ]}
+          />
+        </div>
       </div>
     </div>
   )

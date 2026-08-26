@@ -21,6 +21,8 @@ export interface ClauseVersion {
   kind: ClauseVersionKind
   effectiveDate: string
   lastUpdated: string
+  /** The clause name/title for this version. Falls back to the review title. */
+  clauseName?: string
   text: string
 }
 
@@ -46,6 +48,20 @@ export interface ClauseUpdateReview {
   available: ClauseVersion
   /** Set when an interim version was superseded before anyone adopted it. */
   skippedNote?: string
+  /**
+   * True when the clause body is identical between the current and available
+   * versions — the update is limited to metadata such as the effective date or
+   * the version name. The side pane skips the redline and instead lists what
+   * actually changed. Retain/Update still applies, since there is a new version
+   * to adopt.
+   */
+  clauseTextUnchanged?: boolean
+  /**
+   * True when both the clause body and metadata (clause name, effective date)
+   * changed. The side pane shows the "What changed" metadata summary above the
+   * normal clause-text redline.
+   */
+  showMetadataSummary?: boolean
   action?: 'retain' | 'update'
 }
 
@@ -129,22 +145,25 @@ const clauseUpdateReviews: ClauseUpdateReview[] = [
     id: 4,
     clauseNumber: '52.203-15',
     title: 'Whistleblower Protections Under the American Recovery and Reinvestment Act of 2009.',
-    hasAlternate: true,
+    hasAlternate: false,
     pendingReview: false,
-    situation: 'The version with Alternate I applied is approved and ready to use.',
+    showMetadataSummary: true,
+    situation: 'A newer version was published. The clause text, the clause name, and the effective date all changed.',
     current: {
-      label: 'Aug 2026, as published',
-      kind: 'as-published',
-      effectiveDate: 'Aug 01, 2026',
-      lastUpdated: 'Jul 28, 2026',
-      text: 'Contract Definitization (Aug 2026)\n\n(a) A definitive contract is contemplated. The schedule for definitization consists of the target date for definitization and dates for submission of the Contractor\'s price proposal and beginning of negotiations.\n\n(b) The Contractor agrees to begin promptly negotiating with the Contracting Officer the terms of a definitive contract.\n\n— — —\nAlternate I (Aug 2026). As prescribed in 16.603-4(c)(1), add paragraph (e) to the basic clause.',
+      label: 'Jun 2010',
+      kind: 'original',
+      effectiveDate: 'Jun 10, 2026',
+      lastUpdated: 'Jun 08, 2026',
+      clauseName: 'Whistleblower Protections Under the American Recovery and Reinvestment Act of 2009.',
+      text: 'Whistleblower Protections Under the American Recovery and Reinvestment Act of 2009 (Jun 2010)\n\n(a) The Contractor shall inform its employees in writing, in the predominant language of the workforce, of employee whistleblower rights and protections under section 1553 of the American Recovery and Reinvestment Act of 2009 (Recovery Act).\n\n(b) The Contractor shall not discharge, demote, or otherwise discriminate against an employee as a reprisal for disclosing information to a Member of Congress, an Inspector General, the Government Accountability Office, or a Federal agency, that the employee reasonably believes is evidence of gross mismanagement of an agency contract relating to Recovery Act funds.\n\n(c) The Contractor shall include the substance of this clause, including this paragraph (c), in all subcontracts that are funded in whole or in part with Recovery Act funds.',
     },
     available: {
-      label: 'Sep 2026, Alternate I applied',
-      kind: 'alternate-applied',
+      label: 'Sep 2026',
+      kind: 'as-published',
       effectiveDate: 'Sep 01, 2026',
       lastUpdated: 'Aug 22, 2026',
-      text: 'Contract Definitization (Sep 2026) — Alternate I applied\n\n(a) A definitive contract is contemplated. The schedule for definitization consists of the target date for definitization and dates for submission of the Contractor\'s price proposal and beginning of negotiations.\n\n(b) The Contractor agrees to begin promptly negotiating with the Contracting Officer the terms of a definitive contract.\n\n(e) If agreement on a definitive contract is not reached by the target date, the Contracting Officer may determine a reasonable price or fee in accordance with subpart 15.4 and part 31, subject to Contractor appeal as provided in the Disputes clause.',
+      clauseName: 'Whistleblower Protections for Contractor Employees.',
+      text: 'Whistleblower Protections for Contractor Employees (Sep 2026)\n\n(a) The Contractor shall inform its employees in writing, in the predominant native language of the workforce, of employee whistleblower rights and protections under 41 U.S.C. 4712.\n\n(b) The Contractor shall not discharge, demote, or otherwise discriminate against an employee as a reprisal for disclosing information to a Member of Congress, an Inspector General, the Government Accountability Office, a Federal employee responsible for contract oversight, or a management official of the Contractor, that the employee reasonably believes is evidence of gross mismanagement of a Federal contract, a substantial and specific danger to public health or safety, or a violation of law related to a Federal contract.\n\n(c) The Contractor shall include the substance of this clause, including this paragraph (c), in all subcontracts over the simplified acquisition threshold.',
     },
   },
 
@@ -153,25 +172,26 @@ const clauseUpdateReviews: ClauseUpdateReview[] = [
     id: 5,
     clauseNumber: '52.203-11',
     title: 'Certification and Disclosure Regarding Payments to Influence Certain Federal Transactions.',
-    hasAlternate: true,
+    hasAlternate: false,
     pendingReview: false,
-    situation: 'The version with Alternate I applied is approved and ready to use.',
+    clauseTextUnchanged: true,
+    situation: 'A newer version was published, but the clause text is unchanged. Only the effective date and version name changed.',
     current: {
-      label: 'May 2001',
+      label: 'Jun 2020',
       kind: 'original',
-      effectiveDate: 'May 15, 2026',
-      lastUpdated: 'May 10, 2026',
-      text: 'Drug-Free Workplace (May 2001)\n\n(a) Definitions. As used in this clause—"Controlled substance" means a controlled substance in schedules I through V of section 202 of the Controlled Substances Act (21 U.S.C. 812).\n\n(b) The Contractor, if other than an individual, shall within 30 days after award publish a statement notifying its employees that the unlawful manufacture, distribution, dispensing, possession, or use of a controlled substance is prohibited in the Contractor\'s workplace.',
+      effectiveDate: 'Jun 15, 2026',
+      lastUpdated: 'Jun 10, 2026',
+      clauseName: 'Certification and Disclosure Regarding Payments to Influence Certain Federal Transactions.',
+      text: 'Certification and Disclosure Regarding Payments to Influence Certain Federal Transactions (Jun 2020)\n\n(a) The definitions and prohibitions contained in the clause, at FAR 52.203-12, Limitation on Payments to Influence Certain Federal Transactions, included in this solicitation, are hereby incorporated by reference in paragraph (b) of this certification.\n\n(b) The offeror, by signing its offer, hereby certifies to the best of its knowledge and belief that on or after December 23, 1989—\n(1) No Federal appropriated funds have been paid or will be paid to any person for influencing or attempting to influence an officer or employee of any agency, a Member of Congress, an officer or employee of Congress, or an employee of a Member of Congress on his or her behalf in connection with the awarding of this contract;\n(2) If any funds other than Federal appropriated funds have been paid or will be paid to any person for influencing or attempting to influence an officer or employee of any agency, a Member of Congress, an officer or employee of Congress, or an employee of a Member of Congress on his or her behalf in connection with this contract, the offeror shall complete and submit Standard Form-LLL, Disclosure of Lobbying Activities.',
     },
     available: {
-      label: 'Sep 2026, Alternate I applied',
-      kind: 'alternate-applied',
+      label: 'Sep 2026',
+      kind: 'as-published',
       effectiveDate: 'Sep 01, 2026',
       lastUpdated: 'Aug 25, 2026',
-      text: 'Drug-Free Workplace (Sep 2026) — Alternate I applied\n\n(a) Definitions. As used in this clause—"Controlled substance" means a controlled substance in schedules I through V of section 202 of the Controlled Substances Act (21 U.S.C. 812).\n\n(b) The Contractor, if other than an individual, shall within 15 days after award publish a statement notifying its employees that the unlawful manufacture, distribution, dispensing, possession, or use of a controlled substance is prohibited in the Contractor\'s workplace, and shall provide a copy of that statement to each employee engaged in performance of this contract.\n\n(c) The Contractor shall establish an ongoing drug-free awareness program and notify the Contracting Officer of any conviction under a criminal drug statute within 10 days of receiving notice.',
+      clauseName: 'Certification and Disclosure Regarding Payments to Influence Certain Federal Transactions—Updated.',
+      text: 'Certification and Disclosure Regarding Payments to Influence Certain Federal Transactions (Jun 2020)\n\n(a) The definitions and prohibitions contained in the clause, at FAR 52.203-12, Limitation on Payments to Influence Certain Federal Transactions, included in this solicitation, are hereby incorporated by reference in paragraph (b) of this certification.\n\n(b) The offeror, by signing its offer, hereby certifies to the best of its knowledge and belief that on or after December 23, 1989—\n(1) No Federal appropriated funds have been paid or will be paid to any person for influencing or attempting to influence an officer or employee of any agency, a Member of Congress, an officer or employee of Congress, or an employee of a Member of Congress on his or her behalf in connection with the awarding of this contract;\n(2) If any funds other than Federal appropriated funds have been paid or will be paid to any person for influencing or attempting to influence an officer or employee of any agency, a Member of Congress, an officer or employee of Congress, or an employee of a Member of Congress on his or her behalf in connection with this contract, the offeror shall complete and submit Standard Form-LLL, Disclosure of Lobbying Activities.',
     },
-    skippedNote:
-      'The Aug 2026 published text was superseded before it was adopted, so it is not offered here.',
   },
 ]
 
