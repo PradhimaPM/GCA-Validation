@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import {
   HeadingField,
   CardLayout,
@@ -8,8 +8,9 @@ import {
   RichTextDisplayField,
   TextItem,
   TagField,
+  DropdownField,
 } from '@pglevy/sailwind'
-import { X, Info, ExternalLink, AlertTriangle } from 'lucide-react'
+import { X, Info, ExternalLink, AlertTriangle, CheckCircle } from 'lucide-react'
 import {
   getClauses,
   updateClauseAction,
@@ -30,8 +31,10 @@ import { getIncompleteClauses, type IncompleteClause } from '../db/incomplete-cl
 type PanelView =
   | { kind: 'clause'; clause: Clause }
   | { kind: 'update'; review: ClauseUpdateReview }
+  /** Clause Updates has no rows — the pane still opens and explains why. */
+  | { kind: 'updates-empty' }
 
-export default function ValidateClauseSetOption4() {
+export default function ValidateClauseSetOption3() {
   const [clauses, setClauses] = useState<Clause[]>([])
   const [reviews, setReviews] = useState<ClauseUpdateReview[]>([])
   const [incomplete, setIncomplete] = useState<IncompleteClause[]>([])
@@ -52,7 +55,9 @@ export default function ValidateClauseSetOption4() {
   const inclusions = clauses.filter(c => c.type === 'inclusion')
   const exclusions = clauses.filter(c => c.type === 'exclusion')
 
-
+  // Rows whose newer version has not cleared policy review. These are still
+  // selectable — the warning above the table sets the expectation.
+  const pendingCount = reviews.filter(r => r.pendingReview).length
 
   const handleActionChange = async (id: number, action: 'accept' | 'reject') => {
     await updateClauseAction(id, action)
@@ -132,7 +137,7 @@ export default function ValidateClauseSetOption4() {
               className="flex-shrink-0"
             />
             <span className="text-sm text-[#222222]">
-              Review the items below before finalizing the clause set. Make sure all clauses are addressed to complete validation.
+              Review the items below before finalizing the clause set. Make sure all are addressed to complete validation.
             </span>
           </div>
 
@@ -154,7 +159,7 @@ export default function ValidateClauseSetOption4() {
                     value={[
                       <TextItem
                         key="d"
-                        text="Include or exclude these clauses based on current rules and templates."
+                        text="Review the clauses suggested based on current rules and templates."
                         color="SECONDARY"
                         size="STANDARD"
                       />,
@@ -171,7 +176,7 @@ export default function ValidateClauseSetOption4() {
                       className="flex-shrink-0"
                     />
                     <span className="text-sm text-[#222222]">
-                      Selecting "Accept All" or "Reject All" applies that action to all clauses in this section.
+                      Selecting "Accept All" or "Reject All" applies the action to all clauses in this section.
                     </span>
                   </div>
 
@@ -221,18 +226,39 @@ export default function ValidateClauseSetOption4() {
                     value={[
                       <TextItem
                         key="d"
-                        text="New versions of these clauses are available. Accept the update or keep the current version."
+                        text={
+                          reviews.length === 0
+                            ? 'No clause updates are available. Every clause in this set is on its latest version.'
+                            : 'New versions of these clauses are available. Accept the update or keep the current version.'
+                        }
                         color="SECONDARY"
                         size="STANDARD"
                       />,
                     ]}
-                    marginBelow="STANDARD"
+                    marginBelow="EVEN_LESS"
                   />
+
+                  {pendingCount > 0 && (
+                    <div className="flex items-start gap-2 mb-6">
+                      <AlertTriangle
+                        size={16}
+                        fill="#856C00"
+                        stroke="#FFFCEB"
+                        strokeWidth={2.5}
+                        className="flex-shrink-0 mt-0.5"
+                      />
+                      <span className="text-sm text-[#222222] leading-relaxed">
+                        Items are pending review. Review the changes before proceeding
+                      </span>
+                    </div>
+                  )}
 
                   <UpdateTable
                     reviews={reviews}
                     selectedReviewId={panel?.kind === 'update' ? panel.review.id : undefined}
+                    isEmptySelected={panel?.kind === 'updates-empty'}
                     onReviewClick={r => setPanel({ kind: 'update', review: r })}
+                    onEmptyClick={() => setPanel({ kind: 'updates-empty' })}
                     onActionChange={handleReviewActionChange}
                     onActionClear={handleReviewActionClear}
                   />
@@ -243,7 +269,7 @@ export default function ValidateClauseSetOption4() {
               <CardLayout padding="NONE" showBorder={true} showShadow={false} style="STANDARD">
                 <div className="px-6 py-2.5 bg-[#F5F5F7] border-b border-gray-200">
                   <HeadingField
-                    text="Incomplete clauses"
+                    text="Incomplete Clauses"
                     size="SMALL"
                     headingTag="H2"
                     fontWeight="SEMI_BOLD"
@@ -255,7 +281,7 @@ export default function ValidateClauseSetOption4() {
                     value={[
                       <TextItem
                         key="d"
-                        text="Complete the fill-in for these clauses and mark them as complete."
+                        text="Complete the fill-in for these clauses from summary and mark them as complete."
                         color="SECONDARY"
                         size="STANDARD"
                       />,
@@ -273,8 +299,10 @@ export default function ValidateClauseSetOption4() {
               <div className="w-full lg:w-[380px] xl:w-[440px] lg:flex-shrink-0 h-[650px] lg:sticky lg:top-0">
                 {panel.kind === 'clause' ? (
                   <ClausePanel clause={panel.clause} onClose={() => setPanel(null)} />
-                ) : (
+                ) : panel.kind === 'update' ? (
                   <UpdatePanel review={panel.review} onClose={() => setPanel(null)} />
+                ) : (
+                  <UpdatesEmptyPanel onClose={() => setPanel(null)} />
                 )}
               </div>
             )}
@@ -292,6 +320,66 @@ export default function ValidateClauseSetOption4() {
           />
         </div>
       </div>
+    </div>
+  )
+}
+
+// ============================================================================
+// SourceCell — how the clause got here, with a link to its source clause set
+// ============================================================================
+
+function SourceCell({
+  recommendedBy,
+  reference,
+}: {
+  recommendedBy: Clause['recommendedBy']
+  reference?: string
+}) {
+  if (!reference) {
+    return <span>{recommendedBy}</span>
+  }
+  return (
+    <span className="inline-flex items-center gap-1">
+      <span>{recommendedBy}</span>
+      <span>(</span>
+      <button
+        type="button"
+        className="inline-flex items-center gap-1 text-[#2322F0] hover:underline font-medium"
+      >
+        <ExternalLink size={14} className="flex-shrink-0" />
+        {reference}
+      </button>
+      <span>)</span>
+    </span>
+  )
+}
+
+// ============================================================================
+// SetAllMenu — the repeated "Accept all / Reject all / Clear all" links
+// collapse into one Appian DropdownField. Selecting an option runs the bulk
+// action; the field returns to its placeholder so it reads as a command.
+// ============================================================================
+
+function SetAllMenu({
+  actions,
+}: {
+  actions: { label: string; value: string; onSelect: () => void; disabled?: boolean }[]
+}) {
+  const available = actions.filter(a => !a.disabled)
+  return (
+    <div className="w-40">
+      <DropdownField
+        label="Set all"
+        labelPosition="COLLAPSED"
+        placeholder="Set all"
+        choiceLabels={available.map(a => a.label)}
+        choiceValues={available.map(a => a.value)}
+        value={null}
+        onChange={(v) => {
+          const picked = actions.find(a => a.value === v)
+          picked?.onSelect()
+        }}
+      />
     </div>
   )
 }
@@ -329,10 +417,6 @@ function ClauseSection({
 }: ClauseSectionProps) {
   const hasAnySelection = clauses.some(c => c.action)
 
-  // Clauses in a section are copied from a single source clause set, so the link
-  // appears once above the table instead of repeating on every row.
-  const sourceReference = clauses.find(c => c.sourceReference)?.sourceReference
-
   return (
     <div className="mb-6">
       <div className="flex items-center justify-between mb-2">
@@ -342,62 +426,32 @@ function ClauseSection({
             <TextItem key="count" text={` (${count})`} color="SECONDARY" size="SMALL" />,
           ]}
         />
-        <div className="flex items-center gap-4">
-          <button
-            type="button"
-            onClick={onAcceptAll}
-            className="text-sm text-[#2322F0] hover:underline"
-          >
-            Accept all
-          </button>
-          <button
-            type="button"
-            onClick={onRejectAll}
-            className="text-sm text-[#2322F0] hover:underline"
-          >
-            Reject all
-          </button>
-          <button
-            type="button"
-            onClick={onClearAll}
-            disabled={!hasAnySelection}
-            className={`text-sm ${
-              hasAnySelection
-                ? 'text-[#2322F0] hover:underline cursor-pointer'
-                : 'text-[#6C6C75] cursor-not-allowed'
-            }`}
-          >
-            Clear all
-          </button>
-        </div>
+        <SetAllMenu
+          actions={[
+            { label: 'Accept all', value: 'accept', onSelect: onAcceptAll },
+            { label: 'Reject all', value: 'reject', onSelect: onRejectAll },
+            { label: 'Clear all', value: 'clear', onSelect: onClearAll, disabled: !hasAnySelection },
+          ]}
+        />
       </div>
-
-      {sourceReference && (
-        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 my-3 text-sm text-[#6C6C75]">
-          <span>Clauses are copied from</span>
-          <button
-            type="button"
-            className="inline-flex items-center gap-1 text-[#2322F0] hover:underline font-medium"
-          >
-            <ExternalLink size={14} className="flex-shrink-0" />
-            {sourceReference}
-          </button>
-        </div>
-      )}
 
       <table className="w-full text-sm table-fixed">
         <colgroup>
           <col />
-          <col className="w-64" />
-          <col className="w-32" />
-          <col className="w-52" />
+          <col className="w-56" />
+          <col className="w-24" />
+          <col className="w-20" />
+          <col className="w-20" />
+          <col className="w-16" />
         </colgroup>
         <thead>
           <tr className="text-left border-b border-gray-200">
-            <th className="pb-2 pr-4 font-normal text-gray-500">Clause</th>
-            <th className="pb-2 pr-4 font-normal text-gray-500">{sourceLabel}</th>
-            <th className="pb-2 pr-4 font-normal text-gray-500">Usage</th>
-            <th className="pb-2 pr-4 font-normal text-gray-500">Action</th>
+            <th className="pb-2 pr-4 font-semibold text-[#222222]">Clause</th>
+            <th className="pb-2 pr-4 font-semibold text-[#222222]">{sourceLabel}</th>
+            <th className="pb-2 pr-4 font-semibold text-[#222222]">Usage</th>
+            <th className="pb-2 pr-4 font-semibold text-[#222222] text-center">Accept</th>
+            <th className="pb-2 pr-4 font-semibold text-[#222222] text-center">Reject</th>
+            <th className="pb-2 pr-4 font-semibold text-[#222222]"></th>
           </tr>
         </thead>
         <tbody>
@@ -409,50 +463,53 @@ function ClauseSection({
               }`}
             >
               <td className="py-3 pr-4">
+                <span className="text-[#222222]">
+                  {row.clauseNumber} | {row.title}
+                </span>{' '}
                 <button
                   type="button"
                   onClick={() => onClauseClick(row)}
-                  className="text-[#2322F0] hover:underline text-left"
+                  className="text-[#2322F0] hover:underline whitespace-nowrap"
                 >
-                  {row.clauseNumber} | {row.title}
+                  (View)
                 </button>
               </td>
-              <td className="py-3 pr-4">{row.recommendedBy}</td>
-              <td className="py-3 pr-4">{row.usage}</td>
               <td className="py-3 pr-4">
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-                    <input
-                      type="radio"
-                      name={`action-${row.id}`}
-                      checked={row.action === 'accept'}
-                      onChange={() => onActionChange(row.id, 'accept')}
-                      className="cursor-pointer accent-[#2322F0]"
-                    />
-                    <span>Accept</span>
-                  </label>
-                  <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-                    <input
-                      type="radio"
-                      name={`action-${row.id}`}
-                      checked={row.action === 'reject'}
-                      onChange={() => onActionChange(row.id, 'reject')}
-                      className="cursor-pointer accent-[#2322F0]"
-                    />
-                    <span>Reject</span>
-                  </label>
-                  {row.action ? (
-                    <button
-                      type="button"
-                      onClick={() => onActionClear(row.id)}
-                      className="text-sm text-[#2322F0] hover:underline cursor-pointer"
-                    >
-                      Clear
-                    </button>
-                  ) : (
-                    <span />
-                  )}
-                </div>
+                <SourceCell recommendedBy={row.recommendedBy} reference={row.sourceReference} />
+              </td>
+              <td className="py-3 pr-4">{row.usage}</td>
+              <td className="py-3 pr-4 text-center">
+                <input
+                  type="radio"
+                  name={`action-${row.id}`}
+                  aria-label={`Accept ${row.clauseNumber}`}
+                  checked={row.action === 'accept'}
+                  onChange={() => onActionChange(row.id, 'accept')}
+                  className="cursor-pointer accent-[#2322F0]"
+                />
+              </td>
+              <td className="py-3 pr-4 text-center">
+                <input
+                  type="radio"
+                  name={`action-${row.id}`}
+                  aria-label={`Reject ${row.clauseNumber}`}
+                  checked={row.action === 'reject'}
+                  onChange={() => onActionChange(row.id, 'reject')}
+                  className="cursor-pointer accent-[#2322F0]"
+                />
+              </td>
+              <td className="py-3 pr-4">
+                {row.action ? (
+                  <button
+                    type="button"
+                    onClick={() => onActionClear(row.id)}
+                    className="text-sm text-[#2322F0] hover:underline cursor-pointer"
+                  >
+                    Clear
+                  </button>
+                ) : (
+                  <span />
+                )}
               </td>
             </tr>
           ))}
@@ -490,7 +547,11 @@ function IncompleteTable({ incomplete }: { incomplete: IncompleteClause[] }) {
 interface UpdateTableProps {
   reviews: ClauseUpdateReview[]
   selectedReviewId?: number
+  /** True when the side pane is showing the Clause Updates empty state. */
+  isEmptySelected: boolean
   onReviewClick: (review: ClauseUpdateReview) => void
+  /** Opens the side pane on the empty state when there are no rows. */
+  onEmptyClick: () => void
   onActionChange: (id: number, action: 'retain' | 'update') => void
   onActionClear: (id: number) => void
 }
@@ -498,37 +559,48 @@ interface UpdateTableProps {
 function UpdateTable({
   reviews,
   selectedReviewId,
+  isEmptySelected,
   onReviewClick,
+  onEmptyClick,
   onActionChange,
   onActionClear,
 }: UpdateTableProps) {
-  if (reviews.length === 0) {
-    return (
-      <div className="text-sm text-[#6C6C75] py-2">
-        All clauses are the latest version.
-      </div>
-    )
-  }
-
   return (
     <table className="w-full text-sm table-fixed">
       <colgroup>
-        <col style={{ width: '28%' }} />
-        <col style={{ width: '16%' }} />
-        <col style={{ width: '18%' }} />
-        <col style={{ width: '18%' }} />
-        <col style={{ width: '20%' }} />
+        <col style={{ width: '30%' }} />
+        <col style={{ width: '10%' }} />
+        <col style={{ width: '14%' }} />
+        <col style={{ width: '14%' }} />
+        <col style={{ width: '10%' }} />
+        <col style={{ width: '10%' }} />
+        <col style={{ width: '12%' }} />
       </colgroup>
       <thead>
         <tr className="text-left border-b border-gray-200">
-          <th className="pb-2 pr-4 font-normal text-gray-500">Clause</th>
-          <th className="pb-2 pr-4 font-normal text-gray-500">Status</th>
-          <th className="pb-2 pr-4 font-normal text-gray-500 text-right">Current Effective Date</th>
-          <th className="pb-2 pr-4 font-normal text-gray-500 text-right">New Effective Date</th>
-          <th className="pb-2 pr-4 font-normal text-gray-500">Action</th>
+          <th className="pb-2 pr-4 font-semibold text-[#222222]">Clause</th>
+          <th className="pb-2 pr-4 font-semibold text-[#222222]">Status</th>
+          <th className="pb-2 pr-4 font-semibold text-[#222222] text-right">Current Effective Date</th>
+          <th className="pb-2 pr-4 font-semibold text-[#222222] text-right">New Effective Date</th>
+          <th className="pb-2 pr-4 font-semibold text-[#222222] text-center">Retain</th>
+          <th className="pb-2 pr-4 font-semibold text-[#222222] text-center">Update</th>
+          <th className="pb-2 pr-4 font-semibold text-[#222222]"></th>
         </tr>
       </thead>
       <tbody>
+        {reviews.length === 0 && (
+          <tr className={`border-b border-gray-100 ${isEmptySelected ? 'bg-blue-50' : ''}`}>
+            <td colSpan={7} className="py-3 pr-4">
+              <button
+                type="button"
+                onClick={onEmptyClick}
+                className="text-[#2322F0] hover:underline text-left"
+              >
+                All clauses are the latest version.
+              </button>
+            </td>
+          </tr>
+        )}
         {reviews.map(r => (
           <UpdateRow
             key={r.id}
@@ -560,43 +632,31 @@ function UpdateRow({
   return (
     <tr className={`border-b border-gray-100 ${isSelected ? 'bg-blue-50' : ''}`}>
       <td className="py-3 pr-4 align-middle">
-        <span className="inline-flex items-start gap-1.5">
-          {review.pendingReview && (
-            <HoverTip text={PENDING_REVIEW_HELP}>
-              <AlertTriangle
-                size={15}
-                fill="#856C00"
-                stroke="#FFFCEB"
-                strokeWidth={2.5}
-                className="flex-shrink-0 mt-0.5 cursor-help"
-              />
-            </HoverTip>
-          )}
-          <button
-            type="button"
-            onClick={() => onReviewClick(review)}
-            className="text-[#2322F0] hover:underline text-left"
-          >
-            {review.clauseNumber} | {review.title}
-          </button>
-        </span>
+        <span className="text-[#222222]">
+          {review.clauseNumber} | {review.title}
+        </span>{' '}
+        <button
+          type="button"
+          onClick={() => onReviewClick(review)}
+          className="text-[#2322F0] hover:underline whitespace-nowrap"
+        >
+          (View)
+        </button>
       </td>
 
       <td className="py-3 pr-4 align-middle">
         {review.pendingReview ? (
-          <HoverTip text={PENDING_REVIEW_HELP}>
-            <TagField
-              size="SMALL"
-              tags={[
-                {
-                  text: 'Pending Review',
-                  backgroundColor: 'YELLOW_50',
-                  textColor: 'YELLOW_800',
-                },
-              ]}
-              marginBelow="NONE"
-            />
-          </HoverTip>
+          <TagField
+            size="SMALL"
+            tags={[
+              {
+                text: 'Pending Review',
+                backgroundColor: 'YELLOW_50',
+                textColor: 'YELLOW_800',
+                tooltip: 'This version has not cleared policy approval yet. You can still select it.',
+              },
+            ]}
+          />
         ) : (
           <span className="text-[#6C6C75]">-</span>
         )}
@@ -610,95 +670,42 @@ function UpdateRow({
         <NewDate value={review.available.effectiveDate} />
       </td>
 
+      <td className="py-3 pr-4 align-middle text-center">
+        <input
+          type="radio"
+          name={`update-${review.id}`}
+          aria-label={`Retain ${review.clauseNumber}`}
+          checked={review.action === 'retain'}
+          onChange={() => onActionChange(review.id, 'retain')}
+          className="cursor-pointer accent-[#2322F0]"
+        />
+      </td>
+
+      <td className="py-3 pr-4 align-middle text-center">
+        <input
+          type="radio"
+          name={`update-${review.id}`}
+          aria-label={`Update ${review.clauseNumber}`}
+          checked={review.action === 'update'}
+          onChange={() => onActionChange(review.id, 'update')}
+          className="cursor-pointer accent-[#2322F0]"
+        />
+      </td>
+
       <td className="py-3 pr-4 align-middle">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-            <input
-              type="radio"
-              name={`update-${review.id}`}
-              checked={review.action === 'retain'}
-              onChange={() => onActionChange(review.id, 'retain')}
-              className="cursor-pointer accent-[#2322F0]"
-            />
-            <span>Retain</span>
-          </label>
-          <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-            <input
-              type="radio"
-              name={`update-${review.id}`}
-              checked={review.action === 'update'}
-              onChange={() => onActionChange(review.id, 'update')}
-              className="cursor-pointer accent-[#2322F0]"
-            />
-            <span>Update</span>
-          </label>
-          {review.action ? (
-            <button
-              type="button"
-              onClick={() => onActionClear(review.id)}
-              className="text-sm text-[#2322F0] hover:underline cursor-pointer"
-            >
-              Clear
-            </button>
-          ) : (
-            <span />
-          )}
-        </div>
+        {review.action ? (
+          <button
+            type="button"
+            onClick={() => onActionClear(review.id)}
+            className="text-sm text-[#2322F0] hover:underline cursor-pointer"
+          >
+            Clear
+          </button>
+        ) : (
+          <span />
+        )}
       </td>
     </tr>
-  )
-}
-
-/** Shown wherever a row's newer version has not cleared policy approval. */
-const PENDING_REVIEW_HELP =
-  'This version is pending policy approval. You can select it, but the text may change once approved.'
-
-/**
- * Tooltip that appears immediately on hover or keyboard focus. Positioned with
- * `fixed` so the dialog's scrolling body cannot clip it.
- */
-function HoverTip({ text, children }: { text: string; children: React.ReactNode }) {
-  const [position, setPosition] = useState<{ top: number; left: number } | null>(null)
-  const triggerRef = useRef<HTMLSpanElement>(null)
-
-  const TIP_WIDTH = 288
-  const TIP_ESTIMATED_HEIGHT = 72
-  const GAP = 8
-
-  const show = () => {
-    const el = triggerRef.current
-    if (!el) return
-    const rect = el.getBoundingClientRect()
-    const fitsAbove = rect.top - TIP_ESTIMATED_HEIGHT - GAP > 0
-    setPosition({
-      top: fitsAbove ? rect.top - GAP - TIP_ESTIMATED_HEIGHT : rect.bottom + GAP,
-      left: Math.min(rect.left, window.innerWidth - TIP_WIDTH - 16),
-    })
-  }
-
-  return (
-    <span
-      ref={triggerRef}
-      className="inline-flex"
-      onMouseEnter={show}
-      onMouseLeave={() => setPosition(null)}
-      onFocus={show}
-      onBlur={() => setPosition(null)}
-      tabIndex={0}
-      role="button"
-      aria-label={text}
-    >
-      {children}
-      {position && (
-        <span
-          role="tooltip"
-          style={{ top: position.top, left: position.left, width: TIP_WIDTH }}
-          className="fixed z-[60] px-3 py-2 rounded bg-[#222222] text-white text-xs leading-relaxed shadow-lg pointer-events-none"
-        >
-          {text}
-        </span>
-      )}
-    </span>
   )
 }
 
@@ -717,6 +724,18 @@ function NewDate({ value }: { value: string }) {
 // ============================================================================
 
 function ClausePanel({ clause, onClose }: { clause: Clause; onClose: () => void }) {
+  const [tab, setTab] = useState<'prescription' | 'clause'>('prescription')
+
+  // Reset to the first tab when a different clause is opened.
+  useEffect(() => {
+    setTab('prescription')
+  }, [clause.id])
+
+  const tabs = [
+    { id: 'prescription' as const, label: 'Prescription text' },
+    { id: 'clause' as const, label: 'Clause text' },
+  ]
+
   return (
     <div className="bg-white border border-gray-200 rounded overflow-hidden flex flex-col h-full">
       <PanelHeader
@@ -725,14 +744,73 @@ function ClausePanel({ clause, onClose }: { clause: Clause; onClose: () => void 
         onClose={onClose}
         closeLabel="Close clause details"
       />
-      <div className="px-5 py-4 overflow-y-auto flex-1">
-        <div className="text-xs uppercase tracking-wide text-gray-500 font-semibold mb-2">
-          Prescription text
-        </div>
-        <div className="text-sm text-gray-800 whitespace-pre-line leading-relaxed">
-          {clause.text}
+
+      <div className="px-5 pt-3 border-b border-gray-200 flex-shrink-0">
+        <div className="flex gap-4">
+          {tabs.map(t => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setTab(t.id)}
+              className={`pb-2.5 text-sm font-medium border-b-2 transition-colors ${
+                tab === t.id
+                  ? 'border-[#2322F0] text-[#2322F0]'
+                  : 'border-transparent text-[#6C6C75] hover:text-[#222222]'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
       </div>
+
+      <div className="px-5 py-4 overflow-y-auto flex-1">
+        <div className="text-sm text-gray-800 whitespace-pre-line leading-relaxed">
+          {tab === 'prescription' ? clause.text : clause.clauseText}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ============================================================================
+// Metadata change summary — used both when the clause text is unchanged and
+// alongside the redline when text + metadata both changed.
+// ============================================================================
+
+type MetadataChange = { label: string; from: string; to: string }
+
+/** Builds the list of metadata fields that differ between the two versions. */
+function metadataChanges(review: ClauseUpdateReview): MetadataChange[] {
+  const currentName = review.current.clauseName ?? review.title
+  const availableName = review.available.clauseName ?? review.title
+  return [
+    currentName !== availableName && {
+      label: 'Clause name',
+      from: currentName,
+      to: availableName,
+    },
+    review.current.effectiveDate !== review.available.effectiveDate && {
+      label: 'Effective date',
+      from: review.current.effectiveDate,
+      to: review.available.effectiveDate,
+    },
+  ].filter(Boolean) as MetadataChange[]
+}
+
+function MetadataChangeList({ changes }: { changes: MetadataChange[] }) {
+  return (
+    <div className="space-y-5">
+      {changes.map(c => (
+        <div key={c.label} className="text-sm">
+          <div className="text-[#222222] font-semibold mb-1.5">{c.label}</div>
+          <div className="flex items-center gap-2.5 flex-wrap leading-relaxed text-[#222222]">
+            <span>{c.from}</span>
+            <span className="text-gray-500">changed to</span>
+            <span>{c.to}</span>
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
@@ -757,6 +835,60 @@ function UpdatePanel({
     setShowOriginal(false)
   }, [review.id])
 
+  // The clause body is identical between versions — skip the redline and show
+  // what actually changed (effective date, version name). Retain/Update still
+  // applies, since there is a new version to adopt.
+  if (review.clauseTextUnchanged) {
+    return (
+      <div className="bg-white border border-gray-200 rounded overflow-hidden flex flex-col h-full">
+        <PanelHeader
+          eyebrow={review.clauseNumber}
+          title={review.title}
+          onClose={onClose}
+          closeLabel="Close update details"
+        />
+        <div className="px-5 py-5 overflow-y-auto flex-1">
+          <div className="flex items-start gap-2 px-3 py-2.5 bg-[#F5F5FC] border border-[#DCDEF5] rounded mb-6">
+            <Info
+              size={15}
+              fill="#2322F0"
+              stroke="#F5F5FC"
+              strokeWidth={2.5}
+              className="flex-shrink-0 mt-0.5"
+            />
+            <span className="text-xs text-[#222222] leading-relaxed">
+              The clause text is unchanged in this version. Only the details below were updated.
+            </span>
+          </div>
+
+          <span className="text-xs uppercase tracking-wide text-gray-500 font-semibold">
+            What changed
+          </span>
+          <div className="mt-4">
+            <MetadataChangeList changes={metadataChanges(review)} />
+          </div>
+
+          <div className="mt-8 pt-5 border-t border-gray-200">
+            <span className="text-xs uppercase tracking-wide text-gray-500 font-semibold">
+              Clause text
+            </span>
+            <div className="mt-3 flex flex-col items-center text-center py-8 px-4 bg-[#FAFAFC] border border-gray-200 rounded">
+              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[#EDF7EE] mb-3">
+                <CheckCircle size={26} stroke="#70BF73" strokeWidth={2} />
+              </div>
+              <span className="text-sm text-[#222222] font-semibold mb-1">
+                No changes to the clause text
+              </span>
+              <span className="text-xs text-[#6C6C75] leading-relaxed">
+                The clause text is identical to the current version. Only the details above changed.
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="bg-white border border-gray-200 rounded overflow-hidden flex flex-col h-full">
       <PanelHeader
@@ -766,53 +898,78 @@ function UpdatePanel({
         closeLabel="Close update details"
       />
 
-      <div className="px-5 py-3 flex items-center justify-between border-b border-gray-200 flex-shrink-0">
-        <span className="text-xs uppercase tracking-wide text-gray-500 font-semibold">
-          Clause text
-        </span>
-        <label className="flex items-center gap-2 cursor-pointer">
-          <span className="text-sm text-[#222222]">Show original text</span>
-          <input
-            type="checkbox"
-            checked={showOriginal}
-            onChange={e => setShowOriginal(e.target.checked)}
-            className="cursor-pointer accent-[#2322F0]"
-          />
-        </label>
-      </div>
+      {/* When a metadata summary leads, the Clause text label + toggle move
+          inline above the redline so the heading sits with its content. */}
+      {!review.showMetadataSummary && (
+        <div className="px-5 py-3 flex items-center justify-between border-b border-gray-200 flex-shrink-0">
+          <span className="text-xs uppercase tracking-wide text-gray-500 font-semibold">
+            Clause text
+          </span>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <span className="text-sm text-[#222222]">Show original text</span>
+            <input
+              type="checkbox"
+              checked={showOriginal}
+              onChange={e => setShowOriginal(e.target.checked)}
+              className="cursor-pointer accent-[#2322F0]"
+            />
+          </label>
+        </div>
+      )}
 
       <div className="px-5 py-4 overflow-y-auto flex-1">
+        {review.pendingReview && (
+          <div className="flex items-start gap-2 px-3 py-2.5 bg-[#FFFCEB] border border-[#FFECA4] rounded mb-4">
+            <AlertTriangle
+              size={15}
+              fill="#856C00"
+              stroke="#FFFCEB"
+              strokeWidth={2.5}
+              className="flex-shrink-0 mt-0.5"
+            />
+            <span className="text-xs text-[#222222] leading-relaxed">
+              {review.pendingNotice ??
+                'AI updated this clause. Pending policy approval. Review changes before proceeding.'}
+            </span>
+          </div>
+        )}
+
+        {review.showMetadataSummary && (
+          <div className="mb-6 pb-6 border-b border-gray-200">
+            <span className="text-xs uppercase tracking-wide text-gray-500 font-semibold">
+              What changed
+            </span>
+            <div className="mt-4">
+              <MetadataChangeList changes={metadataChanges(review)} />
+            </div>
+          </div>
+        )}
+
+        {/* Inline Clause text header — only when the metadata summary leads. */}
+        {review.showMetadataSummary && (
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs uppercase tracking-wide text-gray-500 font-semibold">
+              Clause text
+            </span>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <span className="text-sm text-[#222222]">Show original text</span>
+              <input
+                type="checkbox"
+                checked={showOriginal}
+                onChange={e => setShowOriginal(e.target.checked)}
+                className="cursor-pointer accent-[#2322F0]"
+              />
+            </label>
+          </div>
+        )}
+
         {showOriginal ? (
           <div className="text-sm text-gray-800 whitespace-pre-line leading-relaxed">
             {review.current.text}
           </div>
         ) : (
           <>
-            {review.pendingReview && (
-              <div className="flex items-start gap-2 px-3 py-2.5 bg-[#FFFCEB] border border-[#FFECA4] rounded mb-4">
-                <AlertTriangle
-                  size={15}
-                  fill="#856C00"
-                  stroke="#FFFCEB"
-                  strokeWidth={2.5}
-                  className="flex-shrink-0 mt-0.5"
-                />
-                <span className="text-xs text-[#222222] leading-relaxed">
-                  {review.pendingNotice ??
-                    'This version is pending policy approval. The text may change once approved.'}
-                </span>
-              </div>
-            )}
-            <div className="flex items-center gap-4 text-xs mb-3">
-              <span className="inline-flex items-center gap-1.5 text-[#6C6C75]">
-                <span className="inline-block w-2.5 h-2.5 rounded-sm bg-[#9F0019]" />
-                Removed
-              </span>
-              <span className="inline-flex items-center gap-1.5 text-[#6C6C75]">
-                <span className="inline-block w-2.5 h-2.5 rounded-sm bg-[#117C00]" />
-                Added
-              </span>
-            </div>
+            <DiffLegend />
             <TextDiff oldText={review.current.text} newText={review.available.text} />
             {review.skippedNote && (
               <div className="mt-4 px-3 py-2.5 bg-[#F5F5F7] border border-gray-200 rounded text-xs text-[#6C6C75]">
@@ -821,6 +978,54 @@ function UpdatePanel({
             )}
           </>
         )}
+      </div>
+    </div>
+  )
+}
+
+// ============================================================================
+// UpdatesEmptyPanel — Clause Updates has no rows. The pane still opens so the
+// CO gets an explicit confirmation rather than wondering if it failed to load.
+// ============================================================================
+
+function UpdatesEmptyPanel({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="bg-white border border-gray-200 rounded overflow-hidden flex flex-col h-full">
+      <PanelHeader
+        eyebrow="Clause Updates"
+        title="No updates available"
+        onClose={onClose}
+        closeLabel="Close update details"
+      />
+
+      <div className="px-5 py-4 overflow-y-auto flex-1">
+        <div className="flex flex-col items-center text-center py-10">
+          <CheckCircle
+            size={40}
+            fill="#117C00"
+            stroke="#FFFFFF"
+            strokeWidth={2}
+            className="mb-4"
+          />
+          <HeadingField
+            text="Everything is up to date"
+            size="SMALL"
+            headingTag="H3"
+            fontWeight="SEMI_BOLD"
+            marginBelow="LESS"
+          />
+          <RichTextDisplayField
+            align="CENTER"
+            value={[
+              <TextItem
+                key="body"
+                text="Every clause in this set is on its latest published version, so there is nothing to retain or update. New versions will appear here as they are published."
+                color="SECONDARY"
+                size="STANDARD"
+              />,
+            ]}
+          />
+        </div>
       </div>
     </div>
   )
@@ -840,14 +1045,8 @@ function PanelHeader({
   return (
     <div className="px-5 py-4 flex items-start justify-between border-b border-gray-200 flex-shrink-0">
       <div className="pr-3 min-w-0">
-        <div className="text-sm text-gray-500 mb-0.5">{eyebrow}</div>
-        <HeadingField
-          text={title}
-          size="SMALL"
-          headingTag="H2"
-          fontWeight="SEMI_BOLD"
-          marginBelow="NONE"
-        />
+        <div className="text-sm font-bold text-[#222222] mb-0.5">{eyebrow}</div>
+        <div className="text-sm font-normal text-gray-500">{title}</div>
       </div>
       <button
         onClick={onClose}
@@ -857,6 +1056,31 @@ function PanelHeader({
         <X size={20} />
       </button>
     </div>
+  )
+}
+
+// ============================================================================
+// DiffLegend — shows the removed / added styling using the styling itself
+// ============================================================================
+
+function DiffLegend() {
+  return (
+    <RichTextDisplayField
+      value={[
+        <TextItem key="rl" text="Text removed: " color="SECONDARY" size="STANDARD" />,
+        <TextItem
+          key="rv"
+          text="Text removed"
+          style="STRIKETHROUGH"
+          color="#9F0019"
+          size="STANDARD"
+        />,
+        <TextItem key="sp" text="   " size="STANDARD" />,
+        <TextItem key="al" text="Text added: " color="SECONDARY" size="STANDARD" />,
+        <TextItem key="av" text="Text added" color="#117C00" size="STANDARD" />,
+      ]}
+      marginBelow="LESS"
+    />
   )
 }
 

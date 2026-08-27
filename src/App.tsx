@@ -8,6 +8,7 @@ import ValidateClauseSet from './pages/validate-clause-set'
 import ValidateClauseSetOption2 from './pages/validate-clause-set-option-2'
 import ValidateClauseSetOption3 from './pages/validate-clause-set-option-3'
 import ValidateClauseSetOption4 from './pages/validate-clause-set-option-4'
+import ValidateClauseSetOption5 from './pages/validate-clause-set-option-5'
 import ValidateClauseSetEmpty from './pages/validate-clause-set-empty'
 import AiClauseSelection from './pages/ai-clause-selection'
 
@@ -18,6 +19,7 @@ const pages = [
   { path: '/validate-clause-set-option-2', title: 'Validate Clause Set (Option 2)', component: ValidateClauseSetOption2 },
   { path: '/validate-clause-set-option-3', title: 'Validate Clause Set (Option 3)', component: ValidateClauseSetOption3 },
   { path: '/validate-clause-set-option-4', title: 'Validate Clause Set (Option 4)', component: ValidateClauseSetOption4 },
+  { path: '/validate-clause-set-option-5', title: 'Validate Clause Set (Option 5)', component: ValidateClauseSetOption5 },
   { path: '/validate-clause-set-empty', title: 'Validate Clause Set (Empty States)', component: ValidateClauseSetEmpty },
   { path: '/ai-clause-selection', title: 'AI Clause Selection', component: AiClauseSelection },
 ]

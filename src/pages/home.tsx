@@ -10,6 +10,7 @@ export default function Home() {
     { title: 'Validate Clause Set (Option 2)', path: '/validate-clause-set-option-2', description: 'Tabbed layout for compliance, updates, and errors' },
     { title: 'Validate Clause Set (Option 3)', path: '/validate-clause-set-option-3', description: 'Handles clause alternates awaiting policy approval alongside regular updates' },
     { title: 'Validate Clause Set (Option 4)', path: '/validate-clause-set-option-4', description: 'Same as Option 3, with pending review explained by a per-row tooltip instead of section text' },
+    { title: 'Validate Clause Set (Option 5)', path: '/validate-clause-set-option-5', description: 'Column-per-action layout with radios under Accept/Reject headers and a Set all dropdown' },
     { title: 'Validate Clause Set (Empty States)', path: '/validate-clause-set-empty', description: 'All sections with nothing to review' },
     { title: 'AI Clause Selection', path: '/ai-clause-selection', description: 'Enter contract details, upload SOW, and let AI suggest clauses with confidence tiers' },
   ]

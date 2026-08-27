@@ -33,7 +33,7 @@ type PanelView =
   /** Clause Updates has no rows — the pane still opens and explains why. */
   | { kind: 'updates-empty' }
 
-export default function ValidateClauseSetOption3() {
+export default function ValidateClauseSetOption5() {
   const [clauses, setClauses] = useState<Clause[]>([])
   const [reviews, setReviews] = useState<ClauseUpdateReview[]>([])
   const [incomplete, setIncomplete] = useState<IncompleteClause[]>([])
@@ -428,16 +428,20 @@ function ClauseSection({
       <table className="w-full text-sm table-fixed">
         <colgroup>
           <col />
-          <col className="w-64" />
-          <col className="w-32" />
-          <col className="w-52" />
+          <col className="w-56" />
+          <col className="w-24" />
+          <col className="w-20" />
+          <col className="w-20" />
+          <col className="w-16" />
         </colgroup>
         <thead>
           <tr className="text-left border-b border-gray-200">
             <th className="pb-2 pr-4 font-semibold text-[#222222]">Clause</th>
             <th className="pb-2 pr-4 font-semibold text-[#222222]">{sourceLabel}</th>
             <th className="pb-2 pr-4 font-semibold text-[#222222]">Usage</th>
-            <th className="pb-2 pr-4 font-semibold text-[#222222] ">Action</th>
+            <th className="pb-2 pr-4 font-semibold text-[#222222] text-center">Accept</th>
+            <th className="pb-2 pr-4 font-semibold text-[#222222] text-center">Reject</th>
+            <th className="pb-2 pr-4 font-semibold text-[#222222]"></th>
           </tr>
         </thead>
         <tbody>
@@ -464,40 +468,38 @@ function ClauseSection({
                 <SourceCell recommendedBy={row.recommendedBy} reference={row.sourceReference} />
               </td>
               <td className="py-3 pr-4">{row.usage}</td>
+              <td className="py-3 pr-4 text-center">
+                <input
+                  type="radio"
+                  name={`action-${row.id}`}
+                  aria-label={`Accept ${row.clauseNumber}`}
+                  checked={row.action === 'accept'}
+                  onChange={() => onActionChange(row.id, 'accept')}
+                  className="cursor-pointer accent-[#2322F0]"
+                />
+              </td>
+              <td className="py-3 pr-4 text-center">
+                <input
+                  type="radio"
+                  name={`action-${row.id}`}
+                  aria-label={`Reject ${row.clauseNumber}`}
+                  checked={row.action === 'reject'}
+                  onChange={() => onActionChange(row.id, 'reject')}
+                  className="cursor-pointer accent-[#2322F0]"
+                />
+              </td>
               <td className="py-3 pr-4">
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-                    <input
-                      type="radio"
-                      name={`action-${row.id}`}
-                      checked={row.action === 'accept'}
-                      onChange={() => onActionChange(row.id, 'accept')}
-                      className="cursor-pointer accent-[#2322F0]"
-                    />
-                    <span>Accept</span>
-                  </label>
-                  <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-                    <input
-                      type="radio"
-                      name={`action-${row.id}`}
-                      checked={row.action === 'reject'}
-                      onChange={() => onActionChange(row.id, 'reject')}
-                      className="cursor-pointer accent-[#2322F0]"
-                    />
-                    <span>Reject</span>
-                  </label>
-                  {row.action ? (
-                    <button
-                      type="button"
-                      onClick={() => onActionClear(row.id)}
-                      className="text-sm text-[#2322F0] hover:underline cursor-pointer"
-                    >
-                      Clear
-                    </button>
-                  ) : (
-                    <span />
-                  )}
-                </div>
+                {row.action ? (
+                  <button
+                    type="button"
+                    onClick={() => onActionClear(row.id)}
+                    className="text-sm text-[#2322F0] hover:underline cursor-pointer"
+                  >
+                    Clear
+                  </button>
+                ) : (
+                  <span />
+                )}
               </td>
             </tr>
           ))}
@@ -556,10 +558,12 @@ function UpdateTable({
   return (
     <table className="w-full text-sm table-fixed">
       <colgroup>
-        <col style={{ width: '40%' }} />
+        <col style={{ width: '30%' }} />
         <col style={{ width: '10%' }} />
-        <col style={{ width: '12%' }} />
-        <col style={{ width: '11%' }} />
+        <col style={{ width: '14%' }} />
+        <col style={{ width: '14%' }} />
+        <col style={{ width: '10%' }} />
+        <col style={{ width: '10%' }} />
         <col style={{ width: '12%' }} />
       </colgroup>
       <thead>
@@ -568,13 +572,15 @@ function UpdateTable({
           <th className="pb-2 pr-4 font-semibold text-[#222222]">Status</th>
           <th className="pb-2 pr-4 font-semibold text-[#222222] text-right">Current Effective Date</th>
           <th className="pb-2 pr-4 font-semibold text-[#222222] text-right">New Effective Date</th>
-          <th className="pb-2 pr-4 font-semibold text-[#222222] pl-5">Action</th>
+          <th className="pb-2 pr-4 font-semibold text-[#222222] text-center">Retain</th>
+          <th className="pb-2 pr-4 font-semibold text-[#222222] text-center">Update</th>
+          <th className="pb-2 pr-4 font-semibold text-[#222222]"></th>
         </tr>
       </thead>
       <tbody>
         {reviews.length === 0 && (
           <tr className={`border-b border-gray-100 ${isEmptySelected ? 'bg-blue-50' : ''}`}>
-            <td colSpan={5} className="py-3 pr-4">
+            <td colSpan={7} className="py-3 pr-4">
               <button
                 type="button"
                 onClick={onEmptyClick}
@@ -654,40 +660,40 @@ function UpdateRow({
         <NewDate value={review.available.effectiveDate} />
       </td>
 
+      <td className="py-3 pr-4 align-middle text-center">
+        <input
+          type="radio"
+          name={`update-${review.id}`}
+          aria-label={`Retain ${review.clauseNumber}`}
+          checked={review.action === 'retain'}
+          onChange={() => onActionChange(review.id, 'retain')}
+          className="cursor-pointer accent-[#2322F0]"
+        />
+      </td>
+
+      <td className="py-3 pr-4 align-middle text-center">
+        <input
+          type="radio"
+          name={`update-${review.id}`}
+          aria-label={`Update ${review.clauseNumber}`}
+          checked={review.action === 'update'}
+          onChange={() => onActionChange(review.id, 'update')}
+          className="cursor-pointer accent-[#2322F0]"
+        />
+      </td>
+
       <td className="py-3 pr-4 align-middle">
-        <div className="flex flex-wrap items-center ml-5  gap-x-3 gap-y-1">
-          <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-            <input
-              type="radio"
-              name={`update-${review.id}`}
-              checked={review.action === 'retain'}
-              onChange={() => onActionChange(review.id, 'retain')}
-              className="cursor-pointer accent-[#2322F0]"
-            />
-            <span>Retain</span>
-          </label>
-          <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-            <input
-              type="radio"
-              name={`update-${review.id}`}
-              checked={review.action === 'update'}
-              onChange={() => onActionChange(review.id, 'update')}
-              className="cursor-pointer accent-[#2322F0]"
-            />
-            <span>Update</span>
-          </label>
-          {review.action ? (
-            <button
-              type="button"
-              onClick={() => onActionClear(review.id)}
-              className="text-sm text-[#2322F0] hover:underline cursor-pointer"
-            >
-              Clear
-            </button>
-          ) : (
-            <span />
-          )}
-        </div>
+        {review.action ? (
+          <button
+            type="button"
+            onClick={() => onActionClear(review.id)}
+            className="text-sm text-[#2322F0] hover:underline cursor-pointer"
+          >
+            Clear
+          </button>
+        ) : (
+          <span />
+        )}
       </td>
     </tr>
   )
