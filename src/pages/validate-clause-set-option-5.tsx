@@ -427,9 +427,10 @@ function ClauseSection({
 
       <table className="w-full text-sm table-fixed">
         <colgroup>
+          <col className="w-[30%]" />
+          <col className="w-40" />
           <col />
-          <col className="w-56" />
-          <col className="w-24" />
+          <col className="w-40" />
           <col className="w-20" />
           <col className="w-20" />
           <col className="w-16" />
@@ -437,6 +438,7 @@ function ClauseSection({
         <thead>
           <tr className="text-left border-b border-gray-200">
             <th className="pb-2 pr-4 font-semibold text-[#222222]">Clause</th>
+            <th className="pb-2 pr-4 font-semibold text-[#222222]"></th>
             <th className="pb-2 pr-4 font-semibold text-[#222222]">{sourceLabel}</th>
             <th className="pb-2 pr-4 font-semibold text-[#222222]">Usage</th>
             <th className="pb-2 pr-4 font-semibold text-[#222222] text-center">Accept</th>
@@ -455,7 +457,9 @@ function ClauseSection({
               <td className="py-3 pr-4">
                 <span className="text-[#222222]">
                   {row.clauseNumber} | {row.title}
-                </span>{' '}
+                </span>
+              </td>
+              <td className="py-3 pr-4">
                 <button
                   type="button"
                   onClick={() => onClauseClick(row)}
@@ -558,17 +562,19 @@ function UpdateTable({
   return (
     <table className="w-full text-sm table-fixed">
       <colgroup>
-        <col style={{ width: '30%' }} />
+        <col style={{ width: '26%' }} />
+        <col style={{ width: '6%' }} />
         <col style={{ width: '10%' }} />
         <col style={{ width: '14%' }} />
         <col style={{ width: '14%' }} />
         <col style={{ width: '10%' }} />
         <col style={{ width: '10%' }} />
-        <col style={{ width: '12%' }} />
+        <col style={{ width: '10%' }} />
       </colgroup>
       <thead>
         <tr className="text-left border-b border-gray-200">
           <th className="pb-2 pr-4 font-semibold text-[#222222]">Clause</th>
+          <th className="pb-2 pr-4 font-semibold text-[#222222]"></th>
           <th className="pb-2 pr-4 font-semibold text-[#222222]">Status</th>
           <th className="pb-2 pr-4 font-semibold text-[#222222] text-right">Current Effective Date</th>
           <th className="pb-2 pr-4 font-semibold text-[#222222] text-right">New Effective Date</th>
@@ -580,7 +586,7 @@ function UpdateTable({
       <tbody>
         {reviews.length === 0 && (
           <tr className={`border-b border-gray-100 ${isEmptySelected ? 'bg-blue-50' : ''}`}>
-            <td colSpan={7} className="py-3 pr-4">
+            <td colSpan={8} className="py-3 pr-4">
               <button
                 type="button"
                 onClick={onEmptyClick}
@@ -624,7 +630,10 @@ function UpdateRow({
       <td className="py-3 pr-4 align-middle">
         <span className="text-[#222222]">
           {review.clauseNumber} | {review.title}
-        </span>{' '}
+        </span>
+      </td>
+
+      <td className="py-3 pr-4 align-middle">
         <button
           type="button"
           onClick={() => onReviewClick(review)}
