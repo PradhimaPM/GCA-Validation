@@ -770,12 +770,12 @@ function metadataChanges(review: ClauseUpdateReview): MetadataChange[] {
   const availableName = review.available.clauseName ?? review.title
   return [
     currentName !== availableName && {
-      label: 'Clause name',
+      label: 'Clause Name',
       from: currentName,
       to: availableName,
     },
     review.current.effectiveDate !== review.available.effectiveDate && {
-      label: 'Effective date',
+      label: 'Effective Date',
       from: review.current.effectiveDate,
       to: review.available.effectiveDate,
     },
@@ -784,9 +784,12 @@ function metadataChanges(review: ClauseUpdateReview): MetadataChange[] {
 
 function MetadataChangeList({ changes }: { changes: MetadataChange[] }) {
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {changes.map(c => (
-        <div key={c.label} className="text-sm">
+        <div
+          key={c.label}
+          className="text-sm px-4 py-3 bg-[#FAFAFC] border border-gray-200 rounded"
+        >
           <div className="text-[#222222] font-semibold mb-1.5">{c.label}</div>
           <div className="flex items-center gap-2.5 flex-wrap leading-relaxed text-[#222222]">
             <span>{c.from}</span>
@@ -1049,22 +1052,23 @@ function PanelHeader({
 
 function DiffLegend() {
   return (
-    <RichTextDisplayField
-      value={[
-        <TextItem key="rl" text="Text removed: " color="SECONDARY" size="STANDARD" />,
-        <TextItem
-          key="rv"
-          text="Text removed"
-          style="STRIKETHROUGH"
-          color="#9F0019"
-          size="STANDARD"
-        />,
-        <TextItem key="sp" text="   " size="STANDARD" />,
-        <TextItem key="al" text="Text added: " color="SECONDARY" size="STANDARD" />,
-        <TextItem key="av" text="Text added" color="#117C00" size="STANDARD" />,
-      ]}
-      marginBelow="LESS"
-    />
+    <div className="mb-3 px-3 py-2 bg-[#FAFAFC] border border-gray-200 rounded">
+      <RichTextDisplayField
+        value={[
+          <TextItem key="rl" text="Text removed: " color="SECONDARY" size="STANDARD" />,
+          <TextItem
+            key="rv"
+            text="Text removed"
+            style="STRIKETHROUGH"
+            color="#9F0019"
+            size="STANDARD"
+          />,
+          <TextItem key="sp" text="   " size="STANDARD" />,
+          <TextItem key="al" text="Text added: " color="SECONDARY" size="STANDARD" />,
+          <TextItem key="av" text="Text added" style="STRONG" color="#117C00" size="STANDARD" />,
+        ]}
+      />
+    </div>
   )
 }
 

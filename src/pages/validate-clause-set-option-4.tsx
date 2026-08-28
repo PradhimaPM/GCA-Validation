@@ -806,7 +806,7 @@ function MetadataChangeList({ changes }: { changes: MetadataChange[] }) {
           <div className="text-[#222222] font-semibold mb-1.5">{c.label}</div>
           <div className="flex items-center gap-2.5 flex-wrap leading-relaxed text-[#222222]">
             <span>{c.from}</span>
-            <span className="text-gray-500">changed to</span>
+            <span className="text-gray-500" aria-label="changed to">→</span>
             <span>{c.to}</span>
           </div>
         </div>
@@ -1065,22 +1065,23 @@ function PanelHeader({
 
 function DiffLegend() {
   return (
-    <RichTextDisplayField
-      value={[
-        <TextItem key="rl" text="Text removed: " color="SECONDARY" size="STANDARD" />,
-        <TextItem
-          key="rv"
-          text="Text removed"
-          style="STRIKETHROUGH"
-          color="#9F0019"
-          size="STANDARD"
-        />,
-        <TextItem key="sp" text="   " size="STANDARD" />,
-        <TextItem key="al" text="Text added: " color="SECONDARY" size="STANDARD" />,
-        <TextItem key="av" text="Text added" color="#117C00" size="STANDARD" />,
-      ]}
-      marginBelow="LESS"
-    />
+    <div className="mb-3 px-3 py-2 bg-[#FAFAFC] border border-gray-200 rounded">
+      <RichTextDisplayField
+        value={[
+          <TextItem key="rl" text="Text removed: " color="SECONDARY" size="STANDARD" />,
+          <TextItem
+            key="rv"
+            text="Text removed"
+            style="STRIKETHROUGH"
+            color="#9F0019"
+            size="STANDARD"
+          />,
+          <TextItem key="sp" text="   " size="STANDARD" />,
+          <TextItem key="al" text="Text added: " color="SECONDARY" size="STANDARD" />,
+          <TextItem key="av" text="Text added" style="STRONG" color="#117C00" size="STANDARD" />,
+        ]}
+      />
+    </div>
   )
 }
 
