@@ -776,12 +776,12 @@ function metadataChanges(review: ClauseUpdateReview): MetadataChange[] {
   const availableName = review.available.clauseName ?? review.title
   return [
     currentName !== availableName && {
-      label: 'Clause name',
+      label: 'Clause Name',
       from: currentName,
       to: availableName,
     },
     review.current.effectiveDate !== review.available.effectiveDate && {
-      label: 'Effective date',
+      label: 'Effective Date',
       from: review.current.effectiveDate,
       to: review.available.effectiveDate,
     },
