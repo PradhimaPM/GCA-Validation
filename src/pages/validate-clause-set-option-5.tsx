@@ -850,18 +850,7 @@ function UpdatePanel({
           closeLabel="Close update details"
         />
         <div className="px-5 py-5 overflow-y-auto flex-1">
-          <div className="flex items-start gap-2 px-3 py-2.5 bg-[#F5F5FC] border border-[#DCDEF5] rounded mb-6">
-            <Info
-              size={15}
-              fill="#2322F0"
-              stroke="#F5F5FC"
-              strokeWidth={2.5}
-              className="flex-shrink-0 mt-0.5"
-            />
-            <span className="text-xs text-[#222222] leading-relaxed">
-              The clause text is unchanged in this version. Only the details below were updated.
-            </span>
-          </div>
+          
 
           <span className="text-xs uppercase tracking-wide text-gray-500 font-semibold">
             What changed
