@@ -166,19 +166,6 @@ export default function ValidateClauseSetOption5() {
                     marginBelow="STANDARD"
                   />
 
-                  <div className="flex items-center gap-2 mb-4">
-                    <Info
-                      size={16}
-                      fill="#2322F0"
-                      stroke="#F5F5FC"
-                      strokeWidth={2.5}
-                      className="flex-shrink-0"
-                    />
-                    <span className="text-sm text-[#222222]">
-                      Selecting "Accept All" or "Reject All" applies the action to all clauses in this section.
-                    </span>
-                  </div>
-
                   <ClauseSection
                     title="SUGGESTED INCLUSIONS"
                     count={inclusions.length}
@@ -423,6 +410,12 @@ function ClauseSection({
             Clear all
           </button>
         </div>
+      </div>
+
+      <div className="mb-3">
+        <span className="text-sm text-[#6C6C75]">
+          Selecting "Accept All" or "Reject All" applies the action to all clauses in this section.
+        </span>
       </div>
 
       <table className="w-full text-sm table-fixed">
