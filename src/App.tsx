@@ -11,6 +11,7 @@ import ValidateClauseSetOption4 from './pages/validate-clause-set-option-4'
 import ValidateClauseSetOption5 from './pages/validate-clause-set-option-5'
 import ValidateClauseSetEmpty from './pages/validate-clause-set-empty'
 import AiClauseSelection from './pages/ai-clause-selection'
+import AddSuggestedClauses from './pages/add-suggested-clauses'
 
 const pages = [
   { path: '/', title: 'Kanban Board', component: KanbanBoard },
@@ -22,6 +23,7 @@ const pages = [
   { path: '/validate-clause-set-option-5', title: 'Validate Clause Set (Option 5)', component: ValidateClauseSetOption5 },
   { path: '/validate-clause-set-empty', title: 'Validate Clause Set (Empty States)', component: ValidateClauseSetEmpty },
   { path: '/ai-clause-selection', title: 'AI Clause Selection', component: AiClauseSelection },
+  { path: '/add-suggested-clauses', title: 'Add Suggested Clauses', component: AddSuggestedClauses },
 ]
 
 function App() {

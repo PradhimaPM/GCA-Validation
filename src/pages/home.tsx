@@ -13,6 +13,7 @@ export default function Home() {
     { title: 'Validate Clause Set (Option 5)', path: '/validate-clause-set-option-5', description: 'Column-per-action layout with radios under Accept/Reject headers and a Set all dropdown' },
     { title: 'Validate Clause Set (Empty States)', path: '/validate-clause-set-empty', description: 'All sections with nothing to review' },
     { title: 'AI Clause Selection', path: '/ai-clause-selection', description: 'Enter contract details, upload SOW, and let AI suggest clauses with confidence tiers' },
+    { title: 'Add Suggested Clauses', path: '/add-suggested-clauses', description: 'Two-panel picker to select suggested clauses and stage them for addition to a clause set' },
   ]
 
   return (
