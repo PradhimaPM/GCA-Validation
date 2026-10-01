@@ -14,6 +14,7 @@ export default function Home() {
     { title: 'Validate Clause Set (Empty States)', path: '/validate-clause-set-empty', description: 'All sections with nothing to review' },
     { title: 'AI Clause Selection', path: '/ai-clause-selection', description: 'Enter contract details, upload SOW, and let AI suggest clauses with confidence tiers' },
     { title: 'Add Suggested Clauses', path: '/add-suggested-clauses', description: 'Two-panel picker to select suggested clauses and stage them for addition to a clause set' },
+    { title: 'Rules', path: '/rules', description: 'Clause Automation admin screen listing conditional rules that include or exclude clauses based on clause set data' },
   ]
 
   return (

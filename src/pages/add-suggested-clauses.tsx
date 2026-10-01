@@ -68,7 +68,7 @@ export default function AddSuggestedClauses() {
         {/* Dialog Body (two columns) */}
         <div className="flex-1 flex overflow-hidden">
           {/* Available column */}
-          <div className="flex-1 min-w-0 flex flex-col border-r border-gray-200 bg-[#F5F5F7]">
+          <div className="flex-1 min-w-0 flex flex-col border-r border-gray-200 bg-[#FAFAFA]">
             <div className="px-6 py-3 border-b border-gray-200 flex-shrink-0">
               <span className="text-xs uppercase tracking-wide text-[#6C6C75] font-semibold">
                 Available ({available.length})
@@ -92,7 +92,7 @@ export default function AddSuggestedClauses() {
           </div>
 
           {/* Selected column */}
-          <div className="w-[38%] flex-shrink-0 flex flex-col bg-[#F5F5F7]">
+          <div className="w-[38%] flex-shrink-0 flex flex-col bg-[#FAFAFA]">
             <div className="px-6 py-3 border-b border-gray-200 flex-shrink-0">
               <span className="text-xs uppercase tracking-wide text-[#6C6C75] font-semibold">
                 Selected ({selected.length})
