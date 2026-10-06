@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { SiteNav, ButtonWidget } from '@pglevy/sailwind'
+import { SiteNav, ButtonWidget, DropdownField } from '@pglevy/sailwind'
 import {
   LayoutList,
   List,
@@ -28,6 +28,8 @@ import { getRules, createRule, RULE_TOTAL_COUNT, type Rule } from '../db/rules'
 type OptionTab = 'option1' | 'option2' | 'option3'
 type SourceTab = 'all' | 'Standard' | 'Custom'
 
+const SOURCE_FILTER_CHOICES = ['Custom', 'Standard']
+
 const OPTION_TABS: { id: OptionTab; label: string }[] = [
   { id: 'option1', label: 'Option 1' },
   { id: 'option2', label: 'Option 2' },
@@ -39,6 +41,7 @@ export default function Rules() {
   const [search, setSearch] = useState('')
   const [option, setOption] = useState<OptionTab>('option1')
   const [sourceTab, setSourceTab] = useState<SourceTab>('all')
+  const [sourceFilter, setSourceFilter] = useState<string | null>(null)
 
   // Row menu + dialogs
   const [menuOpenId, setMenuOpenId] = useState<number | null>(null)
@@ -65,10 +68,14 @@ export default function Rules() {
   const showSourceSubtext = option === 'option2'
   const showSourceTabs = option === 'option3'
 
-  const visibleRules =
-    showSourceTabs && sourceTab !== 'all'
-      ? rules.filter(r => r.source === sourceTab)
-      : rules
+  const isSourceFiltered =
+    (showSourceTabs && sourceTab !== 'all') || (showSourceColumn && sourceFilter !== null)
+
+  const visibleRules = rules.filter(r => {
+    if (showSourceTabs && sourceTab !== 'all' && r.source !== sourceTab) return false
+    if (showSourceColumn && sourceFilter !== null && r.source !== sourceFilter) return false
+    return true
+  })
 
   const handleCloneCreated = async (newRule: Rule) => {
     await refresh()
@@ -101,6 +108,7 @@ export default function Rules() {
               onClick={() => {
                 setOption(tab.id)
                 setSourceTab('all')
+                setSourceFilter(null)
               }}
               className={`pb-3 text-sm font-medium border-b-2 -mb-px transition-colors ${
                 option === tab.id
@@ -175,6 +183,21 @@ export default function Rules() {
                   <ChevronDown size={16} className="text-gray-400" />
                 </button>
               </div>
+              {showSourceColumn && (
+                <div className="flex items-center gap-2 w-60 shrink-0">
+                  <span className="text-xs uppercase tracking-wide text-gray-500">Source</span>
+                  <DropdownField
+                    label="Source"
+                    labelPosition="COLLAPSED"
+                    placeholder="Any"
+                    choiceLabels={SOURCE_FILTER_CHOICES}
+                    choiceValues={SOURCE_FILTER_CHOICES}
+                    value={sourceFilter}
+                    saveInto={value => setSourceFilter(value ?? null)}
+                    marginBelow="NONE"
+                  />
+                </div>
+              )}
               <div className="flex items-center gap-1 ml-auto">
                 <IconButton label="Export"><Download size={16} /></IconButton>
                 <IconButton label="Filter"><Filter size={16} /></IconButton>
@@ -254,7 +277,7 @@ export default function Rules() {
               <PageControl label="First" disabled><ChevronsRight size={16} className="rotate-180" /></PageControl>
               <PageControl label="Previous" disabled><ChevronRight size={16} className="rotate-180" /></PageControl>
               <span className="px-2">
-                <span className="font-semibold text-gray-900">1 – {visibleRules.length}</span> of {showSourceTabs && sourceTab !== 'all' ? visibleRules.length : RULE_TOTAL_COUNT}
+                <span className="font-semibold text-gray-900">1 – {visibleRules.length}</span> of {isSourceFiltered ? visibleRules.length : RULE_TOTAL_COUNT}
               </span>
               <PageControl label="Next"><ChevronRight size={16} /></PageControl>
               <PageControl label="Last"><ChevronsRight size={16} /></PageControl>
