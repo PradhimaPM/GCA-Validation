@@ -184,18 +184,20 @@ export default function Rules() {
                 </button>
               </div>
               {showSourceColumn && (
-                <div className="flex items-center gap-2 w-60 shrink-0">
+                <div className="flex items-center gap-2 shrink-0">
                   <span className="text-xs uppercase tracking-wide text-gray-500">Source</span>
-                  <DropdownField
-                    label="Source"
-                    labelPosition="COLLAPSED"
-                    placeholder="Any"
-                    choiceLabels={SOURCE_FILTER_CHOICES}
-                    choiceValues={SOURCE_FILTER_CHOICES}
-                    value={sourceFilter}
-                    saveInto={value => setSourceFilter(value ?? null)}
-                    marginBelow="NONE"
-                  />
+                  <div className="w-48 min-w-[12rem] shrink-0">
+                    <DropdownField
+                      label="Source"
+                      labelPosition="COLLAPSED"
+                      placeholder="Any"
+                      choiceLabels={SOURCE_FILTER_CHOICES}
+                      choiceValues={SOURCE_FILTER_CHOICES}
+                      value={sourceFilter}
+                      saveInto={value => setSourceFilter(value ?? null)}
+                      marginBelow="NONE"
+                    />
+                  </div>
                 </div>
               )}
               <div className="flex items-center gap-1 ml-auto">
