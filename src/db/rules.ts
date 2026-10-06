@@ -156,7 +156,8 @@ export async function getRule(id: number): Promise<Rule | undefined> {
 
 export async function createRule(data: Omit<Rule, 'id'>): Promise<Rule> {
   const newRule = { ...data, id: Math.max(0, ...rules.map(r => r.id)) + 1 }
-  rules.push(newRule)
+  // Prepend so newly created rules appear at the top of the grid.
+  rules.unshift(newRule)
   return newRule
 }
 
