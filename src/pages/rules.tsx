@@ -180,7 +180,7 @@ export default function Rules() {
                     <td className="px-4 py-3">
                       <div className="text-gray-900">{rule.name}</div>
                       {showSourceSubtext && (
-                        <div className="text-xs text-gray-500 mt-0.5">{rule.source}</div>
+                        <div className="text-xs text-[#6C6C75] mt-0.5">{rule.source}</div>
                       )}
                     </td>
                     <td className="px-4 py-3">
