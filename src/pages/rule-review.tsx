@@ -229,14 +229,12 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
 
   /* --------------------------------- actions --------------------------------- */
 
-  const handleContentChange = (content: RuleReviewContent) => {
+  /** Commit the dialog's local edits back into the page's review state. */
+  const handleApplyConditions = (name: string, content: RuleReviewContent) => {
+    setNameInput(name)
     setReview(prev => (prev ? { ...prev, ...content } : prev))
     setDirty(true)
-  }
-
-  const handleNameChange = (next: string) => {
-    setNameInput(next)
-    setDirty(true)
+    setEditingConditions(false)
   }
 
   /** Persist a name change, if any, so the Rules list and header stay in sync. */
@@ -444,10 +442,25 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
                   {pluralize(review.groups.length, 'group')}
                 </p>
               </div>
-              {!editingConditions && (
+            </div>
+
+            <div className="px-5 py-4">
+              <div className="mb-4 flex items-start justify-between gap-4">
+                <div>
+                  <HeadingField
+                    text="Conditions"
+                    size="MEDIUM_PLUS"
+                    headingTag="H3"
+                    fontWeight="SEMI_BOLD"
+                    marginBelow="EVEN_LESS"
+                  />
+                  <p className="text-xs text-gray-600">
+                    Clause set data that triggers this rule
+                  </p>
+                </div>
                 <div className="shrink-0">
                   <ButtonWidget
-                    label="Edit Rule"
+                    label="Edit Conditions"
                     style="OUTLINE"
                     color="ACCENT"
                     size="SMALL"
@@ -456,58 +469,36 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
                     onClick={() => setEditingConditions(true)}
                   />
                 </div>
-              )}
-            </div>
+              </div>
 
-            {editingConditions ? (
-              <EditConditionsForm
-                name={nameInput}
-                onNameChange={handleNameChange}
-                content={toContent(review)}
-                onChange={handleContentChange}
-              />
-            ) : (
-              <div className="px-5 py-4">
-                <HeadingField
-                  text="Conditions"
-                  size="MEDIUM_PLUS"
-                  headingTag="H3"
-                  fontWeight="SEMI_BOLD"
-                  marginBelow="EVEN_LESS"
-                />
-                <p className="mb-4 text-xs text-gray-600">
-                  Clause set data that triggers this rule
+              {conditionTotal === 0 && (
+                <p className="text-sm text-gray-700">
+                  This rule has no conditions, so it applies to every clause set.
                 </p>
+              )}
 
-                {conditionTotal === 0 && (
-                  <p className="text-sm text-gray-700">
-                    This rule has no conditions, so it applies to every clause set.
-                  </p>
+              <div className="space-y-4">
+                {review.conditions.length > 0 && (
+                  <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
+                    <ConditionStack conditions={review.conditions} join={review.join} />
+                  </div>
                 )}
 
-                <div className="space-y-4">
-                  {review.conditions.length > 0 && (
+                {review.groups.map((group, groupIndex) => (
+                  <div key={group.id}>
+                    {(review.conditions.length > 0 || groupIndex > 0) && (
+                      <p className="pb-2 text-xs font-semibold text-gray-600">{review.join}</p>
+                    )}
                     <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
-                      <ConditionStack conditions={review.conditions} join={review.join} />
+                      <p className="mb-3 text-xs text-gray-700">
+                        Condition Group {groupIndex + 1}
+                      </p>
+                      <ConditionStack conditions={group.conditions} join={group.join} />
                     </div>
-                  )}
-
-                  {review.groups.map((group, groupIndex) => (
-                    <div key={group.id}>
-                      {(review.conditions.length > 0 || groupIndex > 0) && (
-                        <p className="pb-2 text-xs font-semibold text-gray-600">{review.join}</p>
-                      )}
-                      <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
-                        <p className="mb-3 text-xs text-gray-700">
-                          Condition Group {groupIndex + 1}
-                        </p>
-                        <ConditionStack conditions={group.conditions} join={group.join} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
-            )}
+            </div>
           </div>
 
           {/* Included and excluded clauses, one row each */}
@@ -739,7 +730,75 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
             </DialogField>
           )
         })()}
+
+      {editingConditions && (
+        <EditConditionsDialog
+          initialName={nameInput}
+          initialContent={toContent(review)}
+          busy={busy}
+          onClose={() => setEditingConditions(false)}
+          onApply={handleApplyConditions}
+        />
+      )}
     </>,
+  )
+}
+
+/** Modal that wraps EditConditionsForm with a local draft so changes are only committed on Apply. */
+function EditConditionsDialog({
+  initialName,
+  initialContent,
+  busy,
+  onClose,
+  onApply,
+}: {
+  initialName: string
+  initialContent: RuleReviewContent
+  busy: boolean
+  onClose: () => void
+  onApply: (name: string, content: RuleReviewContent) => void
+}) {
+  const [name, setName] = useState(initialName)
+  const [content, setContent] = useState<RuleReviewContent>(() => structuredClone(initialContent))
+
+  return (
+    <DialogField
+      open={true}
+      onOpenChange={open => {
+        if (!open) onClose()
+      }}
+      title="Edit conditions"
+      width="FIT"
+      height="EXTRA_TALL"
+      closeOnOutsideClick={false}
+      marginBelow="NONE"
+    >
+      <div className="dialog-size-60 flex h-full min-h-0 flex-col">
+        <div className="min-h-0 flex-1 overflow-y-auto pr-2">
+          <EditConditionsForm
+            name={name}
+            onNameChange={setName}
+            content={content}
+            onChange={setContent}
+          />
+        </div>
+        <div className="mt-4 flex shrink-0 items-center justify-between gap-3 border-t border-gray-200 pt-4">
+          <ButtonWidget
+            label="CANCEL"
+            style="OUTLINE"
+            color="ACCENT"
+            onClick={onClose}
+          />
+          <ButtonWidget
+            label="APPLY"
+            style="SOLID"
+            color="ACCENT"
+            disabled={busy}
+            onClick={() => onApply(name, content)}
+          />
+        </div>
+      </div>
+    </DialogField>
   )
 }
 
