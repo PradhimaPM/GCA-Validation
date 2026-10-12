@@ -21,12 +21,12 @@ import {
   Pencil,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
 } from 'lucide-react'
 import EditConditionsForm from '../components/edit-conditions-form'
 import {
   getReviewQueue,
   getRuleReview,
-  saveRuleReviewDraft,
   acceptRuleReview,
   rejectRuleReview,
   countConditions,
@@ -56,9 +56,6 @@ const UNSAVED_CONFIRM = 'You have unsaved changes. Discard them and continue?'
 
 const pluralize = (count: number, singular: string) =>
   `${count} ${singular}${count === 1 ? '' : 's'}`
-
-const formatTime = (iso: string) =>
-  new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
 
 /* -------------------------------------------------------------------------- */
 /* Read-only pieces                                                           */
@@ -174,7 +171,6 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
   const [dirty, setDirty] = useState(false)
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
-  const [savedAt, setSavedAt] = useState<string | null>(null)
   const [editingConditions, setEditingConditions] = useState(false)
   const [confirmingReject, setConfirmingReject] = useState(false)
   const [confirmingDecisionChange, setConfirmingDecisionChange] = useState(false)
@@ -199,7 +195,6 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
       const copy = structuredClone(stored)
       setReview(copy)
       setDirty(false)
-      setSavedAt(stored.draftSavedAt)
       const foundRule = rules.find(r => r.id === ruleId)
       if (foundRule) setNameInput(foundRule.name)
       const included = copy.clauses.filter(c => c.outcome === 'Included')
@@ -254,16 +249,6 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
     setQueue(await getReviewQueue())
   }
 
-  const handleSaveDraft = async () => {
-    if (!review) return
-    setBusy(true)
-    await persistNameIfChanged()
-    const saved = await saveRuleReviewDraft(ruleId, toContent(review))
-    setSavedAt(saved?.draftSavedAt ?? null)
-    setDirty(false)
-    setBusy(false)
-  }
-
   const handleDecision = async (decision: 'accept' | 'reject') => {
     if (!review) return
     setBusy(true)
@@ -294,18 +279,11 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
     // Refresh queue so the status tag reflects the new decision.
     setQueue(await getReviewQueue())
     setDirty(false)
-    setSavedAt(null)
     setBusy(false)
     setConfirmingDecisionChange(false)
   }
 
   /* ---------------------------------- render --------------------------------- */
-
-  const statusMessage = dirty
-    ? 'Unsaved changes'
-    : savedAt
-      ? `Draft saved at ${formatTime(savedAt)}`
-      : ''
 
   const renderShell = (content: ReactNode) => (
     <div className="flex h-screen bg-white">
@@ -400,51 +378,38 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
       {/* Page header */}
       <div className="shrink-0 border-b border-gray-200 bg-white px-8 py-4">
         <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-3">
-            <div className="-ml-2 mt-0.5">
-              <ButtonWidget
-                style="GHOST"
-                color="SECONDARY"
-                size="SMALL"
-                icon="ChevronLeft"
-                tooltip="Back to Rules"
-                accessibilityText="Back to Rules"
-                onClick={goToList}
+          <div>
+            <div className="flex items-center gap-3">
+              <HeadingField
+                text="Review Rule"
+                size="LARGE"
+                headingTag="H1"
+                fontWeight="REGULAR"
+                marginBelow="NONE"
               />
-            </div>
-            <div>
-              <div className="flex items-center gap-3">
-                <HeadingField
-                  text="Review Rule"
-                  size="LARGE"
-                  headingTag="H1"
-                  fontWeight="REGULAR"
-                  marginBelow="NONE"
-                />
-                <TagField
-                  size="SMALL"
-                  tags={[
-                    {
-                      text: rule.status,
-                      backgroundColor: statusTagColors[rule.status].background,
-                      textColor: statusTagColors[rule.status].text,
-                    },
-                  ]}
-                  marginBelow="NONE"
-                />
-              </div>
-              <RichTextDisplayField
-                value={[
-                  <TextItem
-                    key="subtitle"
-                    text="Review the rule and accept it to add to the library"
-                    color="SECONDARY"
-                    size="STANDARD"
-                  />,
+              <TagField
+                size="SMALL"
+                tags={[
+                  {
+                    text: rule.status,
+                    backgroundColor: statusTagColors[rule.status].background,
+                    textColor: statusTagColors[rule.status].text,
+                  },
                 ]}
                 marginBelow="NONE"
               />
             </div>
+            <RichTextDisplayField
+              value={[
+                <TextItem
+                  key="subtitle"
+                  text="Review the rule and accept it to add to the library"
+                  color="SECONDARY"
+                  size="STANDARD"
+                />,
+              ]}
+              marginBelow="NONE"
+            />
           </div>
           {rule.status !== 'Pending' && (
             <div className="shrink-0 pt-1">
@@ -459,6 +424,18 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Back-to-Rules strip, under the main header */}
+      <div className="shrink-0 border-b border-gray-200 bg-gray-50 px-8 py-2">
+        <button
+          type="button"
+          onClick={goToList}
+          className="inline-flex items-center gap-1 text-sm font-semibold text-blue-700 hover:underline focus:outline-none focus-visible:underline"
+        >
+          <ChevronLeft size={16} aria-hidden="true" />
+          Back to Rules
+        </button>
       </div>
 
       {/* Two panes, each scrolling on its own */}
@@ -659,23 +636,16 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
         </section>
       </div>
 
-      {/* Footer actions — always visible so every rule can be edited and saved. */}
+      {/* Footer actions — Cancel on the left discards edits and returns to the Rules list. */}
       <div className="flex shrink-0 items-center justify-between gap-4 border-t border-gray-200 bg-white px-8 py-3">
         <div className="flex items-center gap-4">
           <ButtonWidget
-            label="Save Draft"
+            label="Cancel"
             style="OUTLINE"
             color="ACCENT"
-            disabled={busy || !dirty}
-            onClick={handleSaveDraft}
+            disabled={busy}
+            onClick={goToList}
           />
-          <span
-            className={`text-sm ${dirty ? 'text-amber-700' : 'text-gray-600'}`}
-            role="status"
-            aria-live="polite"
-          >
-            {statusMessage}
-          </span>
         </div>
         {rule.status === 'Pending' && (
           <div className="flex items-center gap-3">
