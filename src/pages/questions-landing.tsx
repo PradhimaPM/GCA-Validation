@@ -34,22 +34,43 @@ const optionDescriptionColors: Record<QuestionImportOption['key'], 'SECONDARY' |
   MANUAL: 'GRAY_500',
 }
 
-/** Reasons to pick system questions, shown as benefit cards in Option 3. */
-const systemBenefits: Array<{ icon: ReactNode; title: string; description: string }> = [
+/** Reasons to pick system questions, shown as benefit cards in Option 3.
+ *  Each benefit uses its own tint so the cards read as a visual trio. */
+const systemBenefits: Array<{
+  icon: ReactNode
+  title: string
+  description: string
+  stat: string
+  tintBg: string
+  tintBorder: string
+  tintText: string
+}> = [
   {
-    icon: <Zap size={22} aria-hidden="true" />,
+    icon: <Zap size={26} aria-hidden="true" />,
     title: 'Save hours of setup',
     description: 'Dozens of questions ready to use out of the box.',
+    stat: 'Setup in minutes',
+    tintBg: '#FEF3C7',
+    tintBorder: '#FCD34D',
+    tintText: '#92400E',
   },
   {
-    icon: <Award size={22} aria-hidden="true" />,
+    icon: <Award size={26} aria-hidden="true" />,
     title: 'Built on best practices',
     description: 'Curated from real GCA acquisition workflows.',
+    stat: 'Field-tested',
+    tintBg: '#D1FAE5',
+    tintBorder: '#6EE7B7',
+    tintText: '#065F46',
   },
   {
-    icon: <Settings2 size={22} aria-hidden="true" />,
+    icon: <Settings2 size={26} aria-hidden="true" />,
     title: 'Fully editable',
     description: 'Add, remove, or edit any question anytime.',
+    stat: 'Yours to shape',
+    tintBg: '#DBEAFE',
+    tintBorder: '#93C5FD',
+    tintText: '#1E40AF',
   },
 ]
 
@@ -147,6 +168,64 @@ export default function QuestionsLanding() {
     </CardLayout>
   )
 
+  /** A compact, horizontal System Questions card for Option 3's header slot. */
+  const CompactSystemCard = () => (
+    <div className="flex items-center gap-5 rounded-md border border-gray-200 bg-white px-6 py-5 shadow-sm">
+      <div
+        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full"
+        style={{ backgroundColor: '#E8E7FD', color: '#2322F0' }}
+      >
+        <Library size={26} aria-hidden="true" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-base font-semibold text-gray-900">
+          Import system questions
+        </p>
+        <p className="text-sm text-gray-600">
+          Add the standard questions that ship with the solution. You can
+          review, edit, or remove them later.
+        </p>
+      </div>
+      <ButtonWidget
+        label="Import"
+        style="SOLID"
+        color="ACCENT"
+        size="MEDIUM"
+        icon="Download"
+        iconPosition="START"
+        onClick={triggerSystemImport}
+      />
+    </div>
+  )
+
+  /** The "import manually" row used in Option 2 — solid border, same visual weight as the hero card above it. */
+  const ManualRowCardSolid = () => (
+    <div className="flex items-center justify-between gap-4 rounded-md border border-gray-200 bg-white px-5 py-4">
+      <div className="flex items-start gap-3">
+        <PencilLine
+          size={20}
+          aria-hidden="true"
+          className="mt-0.5 shrink-0 text-gray-500"
+        />
+        <div>
+          <p className="text-sm font-semibold text-gray-900">Import manually</p>
+          <p className="text-xs text-gray-600">
+            Upload a spreadsheet to add many questions at once.
+          </p>
+        </div>
+      </div>
+      <ButtonWidget
+        label="Upload Excel"
+        style="OUTLINE"
+        color="ACCENT"
+        size="SMALL"
+        icon="Upload"
+        iconPosition="START"
+        onClick={triggerUploadPicker}
+      />
+    </div>
+  )
+
   /** The subtle "import manually" row used in Option 3 below the benefit cards. */
   const ManualInlineCard = () => (
     <div className="flex items-center justify-between gap-4 rounded-md border border-dashed border-gray-300 bg-gray-50 px-5 py-4">
@@ -239,34 +318,25 @@ export default function QuestionsLanding() {
     </div>
   )
 
-  /** Option 2 — one prominent card for System Questions, manual as a text link. */
+  /** Option 2 — one prominent card for System Questions, with a bordered manual row below. */
   const option2Content = (
     <div className="mx-auto max-w-xl pt-2">
       <SystemHeroCard />
-      <p className="mt-6 text-center text-sm text-gray-600">
-        Already have questions in a spreadsheet?{' '}
-        <button
-          type="button"
-          onClick={triggerUploadPicker}
-          className="font-semibold text-blue-700 underline-offset-2 hover:underline focus:outline-none focus-visible:underline"
-        >
-          Upload Excel file
-        </button>
-      </p>
+      <div className="mt-6">
+        <ManualRowCardSolid />
+      </div>
     </div>
   )
 
-  /** Option 3 — hero System card, three benefit cards, then the manual row. */
+  /** Option 3 — compact system card at top, three visual benefit cards, then the manual row. */
   const option3Content = (
     <div className="mx-auto max-w-4xl pt-2">
-      <div className="mx-auto max-w-xl">
-        <SystemHeroCard />
-      </div>
+      <CompactSystemCard />
 
-      <div className="mt-10 mb-4 text-center">
+      <div className="mt-10 mb-5 text-center">
         <HeadingField
           text="Why system questions?"
-          size="MEDIUM"
+          size="MEDIUM_PLUS"
           headingTag="H3"
           fontWeight="SEMI_BOLD"
           align="CENTER"
@@ -274,20 +344,43 @@ export default function QuestionsLanding() {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
         {systemBenefits.map(benefit => (
           <div
             key={benefit.title}
-            className="flex flex-col items-start rounded-md border border-gray-200 bg-white px-5 py-5"
+            className="relative overflow-hidden rounded-lg border bg-white px-6 py-6 shadow-sm transition-shadow hover:shadow-md"
+            style={{ borderColor: benefit.tintBorder }}
           >
+            {/* Decorative tint blob in the top-right corner */}
             <div
-              className="mb-3 flex h-10 w-10 items-center justify-center rounded-full"
-              style={{ backgroundColor: '#E8E7FD', color: '#2322F0' }}
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full opacity-40"
+              style={{ backgroundColor: benefit.tintBg }}
+            />
+            {/* Smaller accent dot */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute right-6 top-8 h-3 w-3 rounded-full opacity-60"
+              style={{ backgroundColor: benefit.tintBorder }}
+            />
+
+            <div
+              className="relative mb-4 flex h-14 w-14 items-center justify-center rounded-xl"
+              style={{ backgroundColor: benefit.tintBg, color: benefit.tintText }}
             >
               {benefit.icon}
             </div>
-            <p className="mb-1 text-sm font-semibold text-gray-900">{benefit.title}</p>
-            <p className="text-sm text-gray-600">{benefit.description}</p>
+
+            <p
+              className="relative mb-1 text-xs font-semibold uppercase tracking-wide"
+              style={{ color: benefit.tintText }}
+            >
+              {benefit.stat}
+            </p>
+            <p className="relative mb-2 text-base font-semibold text-gray-900">
+              {benefit.title}
+            </p>
+            <p className="relative text-sm text-gray-600">{benefit.description}</p>
           </div>
         ))}
       </div>
