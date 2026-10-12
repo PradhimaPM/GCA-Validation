@@ -448,7 +448,7 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
                 <div className="shrink-0">
                   <ButtonWidget
                     label="Edit Rule"
-                    style="SOLID"
+                    style="OUTLINE"
                     color="ACCENT"
                     icon="Pencil"
                     iconPosition="START"
