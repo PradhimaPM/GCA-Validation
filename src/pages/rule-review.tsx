@@ -170,7 +170,6 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
   const [done, setDone] = useState(false)
   const [editingConditions, setEditingConditions] = useState(false)
   const [confirmingReject, setConfirmingReject] = useState(false)
-  const [confirmingDecisionChange, setConfirmingDecisionChange] = useState(false)
   const [selectedClauseId, setSelectedClauseId] = useState<number | null>(null)
   const [viewingClauseId, setViewingClauseId] = useState<number | null>(null)
   const [nameInput, setNameInput] = useState('')
@@ -257,26 +256,7 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
     setLocation('/rules-review')
   }
 
-  /**
-   * Flip an Accepted rule to Rejected (or vice versa). Called from the top-bar
-   * Change Decision button after the reviewer confirms.
-   */
-  const handleChangeDecision = async () => {
-    if (!review || !rule || rule.status === 'Pending') return
-    setBusy(true)
-    await persistNameIfChanged()
-    const content = toContent(review)
-    if (rule.status === 'Accepted') {
-      await rejectRuleReview(ruleId, content)
-    } else {
-      await acceptRuleReview(ruleId, content)
-    }
-    // Refresh queue so the status tag reflects the new decision.
-    setQueue(await getReviewQueue())
-    setDirty(false)
-    setBusy(false)
-    setConfirmingDecisionChange(false)
-  }
+
 
   /* ---------------------------------- render --------------------------------- */
 
@@ -406,18 +386,7 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
               marginBelow="NONE"
             />
           </div>
-          {rule.status !== 'Pending' && (
-            <div className="shrink-0 pt-1">
-              <ButtonWidget
-                label="Change Decision"
-                style="OUTLINE"
-                color="ACCENT"
-                icon="RefreshCw"
-                iconPosition="START"
-                onClick={() => setConfirmingDecisionChange(true)}
-              />
-            </div>
-          )}
+
         </div>
       </div>
 
@@ -608,24 +577,22 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
             onClick={goToList}
           />
         </div>
-        {rule.status === 'Pending' && (
-          <div className="flex items-center gap-3">
-            <ButtonWidget
-              label="Reject"
-              style="OUTLINE"
-              color="NEGATIVE"
-              disabled={busy}
-              onClick={() => setConfirmingReject(true)}
-            />
-            <ButtonWidget
-              label="Accept"
-              style="SOLID"
-              color="ACCENT"
-              disabled={busy}
-              onClick={() => handleDecision('accept')}
-            />
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          <ButtonWidget
+            label="Reject"
+            style="OUTLINE"
+            color="NEGATIVE"
+            disabled={busy || rule.status === 'Rejected'}
+            onClick={() => setConfirmingReject(true)}
+          />
+          <ButtonWidget
+            label="Accept"
+            style="SOLID"
+            color="ACCENT"
+            disabled={busy || rule.status === 'Accepted'}
+            onClick={() => handleDecision('accept')}
+          />
+        </div>
       </div>
 
       {confirmingReject && (
@@ -664,40 +631,7 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
         </DialogField>
       )}
 
-      {confirmingDecisionChange && rule.status !== 'Pending' && (
-        <DialogField
-          open={true}
-          onOpenChange={open => {
-            if (!open) setConfirmingDecisionChange(false)
-          }}
-          title="Change decision?"
-          width="MEDIUM"
-          height="FIT"
-          closeOnOutsideClick={false}
-          marginBelow="NONE"
-        >
-          <p className="text-sm text-gray-600">
-            This rule was previously {rule.status.toLowerCase()}. Would you like to{' '}
-            {rule.status === 'Accepted' ? 'reject' : 'accept'} it instead?
-          </p>
-          <hr className="-mx-6 mt-6 border-gray-200" />
-          <div className="mt-4 flex items-center justify-between gap-3">
-            <ButtonWidget
-              label="CANCEL"
-              style="OUTLINE"
-              color="ACCENT"
-              onClick={() => setConfirmingDecisionChange(false)}
-            />
-            <ButtonWidget
-              label={rule.status === 'Accepted' ? 'REJECT' : 'ACCEPT'}
-              style="SOLID"
-              color={rule.status === 'Accepted' ? 'NEGATIVE' : 'ACCENT'}
-              disabled={busy}
-              onClick={handleChangeDecision}
-            />
-          </div>
-        </DialogField>
-      )}
+
 
       {viewingClauseId !== null &&
         (() => {
