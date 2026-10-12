@@ -17,11 +17,8 @@ import {
   Layers,
   CircleHelp,
   Shuffle,
-  Eye,
-  Pencil,
   ChevronDown,
   ChevronUp,
-  ChevronLeft,
 } from 'lucide-react'
 import EditConditionsForm from '../components/edit-conditions-form'
 import {
@@ -426,17 +423,7 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
         </div>
       </div>
 
-      {/* Back-to-Rules strip, under the main header */}
-      <div className="shrink-0 border-b border-gray-200 bg-gray-50 px-8 py-2">
-        <button
-          type="button"
-          onClick={goToList}
-          className="inline-flex items-center gap-1 text-sm font-semibold text-blue-700 hover:underline focus:outline-none focus-visible:underline"
-        >
-          <ChevronLeft size={16} aria-hidden="true" />
-          Back to Rules
-        </button>
-      </div>
+
 
       {/* Two panes, each scrolling on its own */}
       <div className="flex min-h-0 flex-1">
@@ -457,36 +444,18 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
                   {pluralize(review.groups.length, 'group')}
                 </p>
               </div>
-              <div
-                role="group"
-                aria-label="Rule view"
-                className="inline-flex shrink-0 overflow-hidden rounded border border-gray-300 text-xs font-semibold uppercase"
-              >
-                <button
-                  type="button"
-                  aria-current={!editingConditions ? 'true' : undefined}
-                  onClick={() => setEditingConditions(false)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 ${
-                    !editingConditions
-                      ? 'bg-blue-50 text-blue-800'
-                      : 'bg-white text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <Eye size={14} aria-hidden="true" /> Preview
-                </button>
-                <button
-                  type="button"
-                  aria-current={editingConditions ? 'true' : undefined}
-                  onClick={() => setEditingConditions(true)}
-                  className={`inline-flex items-center gap-1.5 border-l border-gray-300 px-3 py-1.5 ${
-                    editingConditions
-                      ? 'bg-blue-50 text-blue-800'
-                      : 'bg-white text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <Pencil size={14} aria-hidden="true" /> Edit
-                </button>
-              </div>
+              {!editingConditions && (
+                <div className="shrink-0">
+                  <ButtonWidget
+                    label="Edit Rule"
+                    style="SOLID"
+                    color="ACCENT"
+                    icon="Pencil"
+                    iconPosition="START"
+                    onClick={() => setEditingConditions(true)}
+                  />
+                </div>
+              )}
             </div>
 
             {editingConditions ? (
