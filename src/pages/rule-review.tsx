@@ -142,22 +142,19 @@ function CollapsibleCard({
   )
 }
 
-/** A read-only row in the clause lists with a trailing "View" link. */
+/** A compact row in the clause lists: clickable clause number followed by its title. */
 function ClauseRow({ clause, onView }: { clause: ReviewClause; onView: () => void }) {
   return (
-    <div className="flex items-start justify-between gap-3 border-b border-gray-100 px-4 py-3 last:border-b-0">
-      <div className="min-w-0">
-        <span className="block text-sm font-semibold text-gray-900">{clause.number}</span>
-        <span className="mt-0.5 line-clamp-2 block text-sm text-gray-600">{clause.title}</span>
-      </div>
+    <div className="border-b border-gray-100 px-4 py-2 text-sm last:border-b-0">
       <button
         type="button"
         onClick={onView}
-        aria-label={`View ${clause.number}`}
-        className="shrink-0 text-sm font-medium text-blue-700 hover:underline focus:outline-none focus-visible:underline"
+        aria-label={`View ${clause.number} ${clause.title}`}
+        className="font-semibold text-blue-700 hover:underline focus:outline-none focus-visible:underline"
       >
-        View
+        {clause.number}
       </button>
+      <span className="ml-2 text-gray-700">{clause.title}</span>
     </div>
   )
 }
