@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type ReactNode } from 'react'
+import { useState, useRef, type ReactNode } from 'react'
 import { useLocation } from 'wouter'
 import {
   HeadingField,
@@ -12,27 +12,8 @@ import {
 } from '@pglevy/sailwind'
 import { Library, PencilLine, Zap, Award, Settings2 } from 'lucide-react'
 import QuestionsShell from '../components/questions-shell'
-import {
-  getQuestionImportOptions,
-  type QuestionImportOption,
-} from '../db/question-import-options'
 import { importSystemQuestions, importCustomQuestions } from '../db/questions'
 import { EXCEL_ACCEPT, isExcelFile } from '../lib/excel-file'
-
-const optionIcons: Record<QuestionImportOption['key'], ReactNode> = {
-  SYSTEM: <Library size={28} aria-hidden="true" />,
-  MANUAL: <PencilLine size={28} aria-hidden="true" />,
-}
-
-const optionButtonIcons: Record<QuestionImportOption['key'], string> = {
-  SYSTEM: 'Download',
-  MANUAL: 'Upload',
-}
-
-const optionDescriptionColors: Record<QuestionImportOption['key'], 'SECONDARY' | 'GRAY_500'> = {
-  SYSTEM: 'SECONDARY',
-  MANUAL: 'GRAY_500',
-}
 
 /** Reasons to pick system questions, shown as benefit cards in Option 3.
  *  Each benefit uses its own tint so the cards read as a visual trio. */
@@ -75,15 +56,10 @@ const systemBenefits: Array<{
 ]
 
 export default function QuestionsLanding() {
-  const [options, setOptions] = useState<QuestionImportOption[]>([])
   const [, setLocation] = useLocation()
   const [excelFile, setExcelFile] = useState<File | null>(null)
   const [fileError, setFileError] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    getQuestionImportOptions().then(setOptions)
-  }, [])
 
   const triggerSystemImport = () => {
     importSystemQuestions().then(() => setLocation('/questions-review'))
@@ -111,64 +87,7 @@ export default function QuestionsLanding() {
   /* Reusable blocks                                                           */
   /* ------------------------------------------------------------------------ */
 
-  /** The icon circle used on the main System Questions card across all tabs. */
-  const SystemIconBubble = ({ large = false }: { large?: boolean }) => (
-    <div
-      className={`flex items-center justify-center rounded-full ${
-        large ? 'w-20 h-20 mb-5' : 'w-16 h-16 mb-4'
-      }`}
-      style={{ backgroundColor: '#E8E7FD', color: '#2322F0' }}
-    >
-      {large ? <Library size={36} aria-hidden="true" /> : optionIcons.SYSTEM}
-    </div>
-  )
-
-  /** The hero System Questions card, used in Options 2 and 3. */
-  const SystemHeroCard = () => (
-    <CardLayout
-      padding="EVEN_MORE"
-      showBorder={true}
-      showShadow={true}
-      shape="SEMI_ROUNDED"
-    >
-      <div className="flex flex-col items-center text-center">
-        <SystemIconBubble large={true} />
-        <HeadingField
-          text="Import system questions"
-          size="LARGE"
-          headingTag="H2"
-          fontWeight="SEMI_BOLD"
-          align="CENTER"
-          marginBelow="EVEN_LESS"
-        />
-        <div className="mb-6 max-w-md">
-          <RichTextDisplayField
-            align="CENTER"
-            value={[
-              <TextItem
-                key="desc"
-                text="Add the standard questions that ship with the solution. Review them, pick the ones you need, and start building clause sets right away."
-                color="SECONDARY"
-                size="MEDIUM"
-              />,
-            ]}
-            marginBelow="NONE"
-          />
-        </div>
-        <ButtonWidget
-          label="Import system questions"
-          style="SOLID"
-          color="ACCENT"
-          size="MEDIUM"
-          icon="Download"
-          iconPosition="START"
-          onClick={triggerSystemImport}
-        />
-      </div>
-    </CardLayout>
-  )
-
-  /** A compact, horizontal System Questions card for Option 3's header slot. */
+  /** A compact, horizontal System Questions card used across all three options. */
   const CompactSystemCard = () => (
     <div className="flex items-center gap-5 rounded-md border border-gray-200 bg-white px-6 py-5 shadow-sm">
       <div
@@ -260,68 +179,43 @@ export default function QuestionsLanding() {
   /* Tab contents                                                              */
   /* ------------------------------------------------------------------------ */
 
-  /** Option 1 — the current layout: two equal, stacked import cards. */
+  /** Option 1 — compact system card on top, matching compact manual card below. */
   const option1Content = (
-    <div className="mx-auto flex max-w-xl flex-col gap-6 pt-2">
-      {options.map(option => (
-        <CardLayout
-          key={option.id}
-          padding="MORE"
-          showBorder={true}
-          showShadow={false}
-          shape="SEMI_ROUNDED"
-          height="AUTO"
+    <div className="mx-auto flex max-w-xl flex-col gap-4 pt-2">
+      <CompactSystemCard />
+      <div className="flex items-center gap-5 rounded-md border border-gray-200 bg-white px-6 py-5 shadow-sm">
+        <div
+          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full"
+          style={{ backgroundColor: '#F3F4F6', color: '#4B5563' }}
         >
-          <div className="flex flex-col items-center text-center h-full">
-            <div
-              className="flex items-center justify-center w-16 h-16 rounded-full mb-4"
-              style={{ backgroundColor: '#E8E7FD', color: '#2322F0' }}
-            >
-              {optionIcons[option.key]}
-            </div>
-            <HeadingField
-              text={option.title}
-              size="MEDIUM_PLUS"
-              headingTag="H2"
-              fontWeight="SEMI_BOLD"
-              align="CENTER"
-              marginBelow="EVEN_LESS"
-            />
-            <div className="mb-6 flex-1">
-              <RichTextDisplayField
-                align="CENTER"
-                value={[
-                  <TextItem
-                    key="desc"
-                    text={option.description}
-                    color={optionDescriptionColors[option.key]}
-                    size="MEDIUM"
-                  />,
-                ]}
-                marginBelow="NONE"
-              />
-            </div>
-            <ButtonWidget
-              label={option.buttonLabel}
-              style={option.key === 'SYSTEM' ? 'SOLID' : 'OUTLINE'}
-              color="ACCENT"
-              size="MEDIUM"
-              icon={optionButtonIcons[option.key]}
-              iconPosition="START"
-              onClick={
-                option.key === 'SYSTEM' ? triggerSystemImport : triggerUploadPicker
-              }
-            />
-          </div>
-        </CardLayout>
-      ))}
+          <PencilLine size={26} aria-hidden="true" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-base font-semibold text-gray-900">
+            Import manually
+          </p>
+          <p className="text-sm text-gray-600">
+            Upload your own spreadsheet of questions. You can review, edit, or
+            remove them before saving.
+          </p>
+        </div>
+        <ButtonWidget
+          label="Upload"
+          style="OUTLINE"
+          color="ACCENT"
+          size="MEDIUM"
+          icon="Upload"
+          iconPosition="START"
+          onClick={triggerUploadPicker}
+        />
+      </div>
     </div>
   )
 
-  /** Option 2 — one prominent card for System Questions, with a bordered manual row below. */
+  /** Option 2 — compact system card up top, bordered manual row below. */
   const option2Content = (
     <div className="mx-auto max-w-xl pt-2">
-      <SystemHeroCard />
+      <CompactSystemCard />
       <div className="mt-6">
         <ManualRowCardSolid />
       </div>
