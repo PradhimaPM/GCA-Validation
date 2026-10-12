@@ -19,7 +19,7 @@ import {
   Layers,
   CircleHelp,
   Shuffle,
-  Eye,
+  SquarePen,
 } from 'lucide-react'
 import {
   getRuleApprovals,
@@ -246,17 +246,17 @@ export default function RulesReview() {
                 )}
               />
               <GridColumn
-                label=""
+                label="Edit"
                 width="ICON"
                 align="CENTER"
                 value={(row: RuleApproval) => (
                   <button
                     type="button"
                     onClick={() => setLocation(`/rules-review/${row.id}`)}
-                    aria-label={`Review ${row.name}`}
+                    aria-label={`Edit ${row.name}`}
                     className="inline-flex items-center justify-center rounded p-1 text-blue-700 hover:bg-blue-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                   >
-                    <Eye size={18} aria-hidden="true" />
+                    <SquarePen size={18} aria-hidden="true" />
                   </button>
                 )}
               />

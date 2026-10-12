@@ -450,6 +450,7 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
                     label="Edit Rule"
                     style="OUTLINE"
                     color="ACCENT"
+                    size="SMALL"
                     icon="Pencil"
                     iconPosition="START"
                     onClick={() => setEditingConditions(true)}
