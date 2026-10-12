@@ -115,8 +115,9 @@ export default function RulesReview() {
             <div className="shrink-0 pt-1">
               <ButtonWidget
                 label="Export Package"
-                style="SOLID"
+                style="OUTLINE"
                 color="ACCENT"
+                size="SMALL"
                 icon="Box"
                 iconPosition="START"
                 onClick={() => setConfirmingExport(true)}
@@ -290,8 +291,7 @@ export default function RulesReview() {
           >
             <p className="text-sm text-gray-600">
               Only rules in the <span className="font-semibold text-gray-900">Accepted</span>{' '}
-              status will be included in the package. Rules that are still Pending review or
-              have been Rejected won&apos;t be exported.
+              status will be included in the package.
             </p>
             <hr className="-mx-6 mt-6 border-gray-200" />
             <div className="mt-4 flex items-center justify-between gap-3">
