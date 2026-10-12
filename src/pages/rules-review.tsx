@@ -19,6 +19,7 @@ import {
   Layers,
   CircleHelp,
   Shuffle,
+  Eye,
 } from 'lucide-react'
 import {
   getRuleApprovals,
@@ -188,20 +189,7 @@ export default function RulesReview() {
                 label="Name"
                 sortField="name"
                 width="WIDE"
-                value={(row: RuleApproval) => (
-                  <RichTextDisplayField
-                    value={[
-                      <TextItem
-                        key="name"
-                        text={row.name}
-                        color="ACCENT"
-                        link={() => setLocation(`/rules-review/${row.id}`)}
-                        linkStyle="STANDALONE"
-                      />,
-                    ]}
-                    marginBelow="NONE"
-                  />
-                )}
+                value="name"
               />
               <GridColumn
                 label="Status"
@@ -255,6 +243,21 @@ export default function RulesReview() {
                     preventWrapping={true}
                     marginBelow="NONE"
                   />
+                )}
+              />
+              <GridColumn
+                label=""
+                width="ICON"
+                align="CENTER"
+                value={(row: RuleApproval) => (
+                  <button
+                    type="button"
+                    onClick={() => setLocation(`/rules-review/${row.id}`)}
+                    aria-label={`Review ${row.name}`}
+                    className="inline-flex items-center justify-center rounded p-1 text-blue-700 hover:bg-blue-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                  >
+                    <Eye size={18} aria-hidden="true" />
+                  </button>
                 )}
               />
             </ReadOnlyGrid>
