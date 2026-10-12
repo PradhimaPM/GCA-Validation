@@ -790,7 +790,7 @@ function EditConditionsDialog({
             onClick={onClose}
           />
           <ButtonWidget
-            label="APPLY"
+            label="SAVE"
             style="SOLID"
             color="ACCENT"
             disabled={busy}
