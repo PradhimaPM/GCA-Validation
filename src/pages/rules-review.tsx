@@ -12,6 +12,7 @@ import {
   RichTextDisplayField,
   TextItem,
   TagField,
+  DialogField,
 } from '@pglevy/sailwind'
 import {
   LayoutGrid,
@@ -52,6 +53,7 @@ export default function RulesReview() {
   const [searchInput, setSearchInput] = useState('')
   const [appliedSearch, setAppliedSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string | null>(null)
+  const [confirmingExport, setConfirmingExport] = useState(false)
 
   useEffect(() => {
     getRuleApprovals().then(data => {
@@ -108,6 +110,16 @@ export default function RulesReview() {
                   />,
                 ]}
                 marginBelow="NONE"
+              />
+            </div>
+            <div className="shrink-0 pt-1">
+              <ButtonWidget
+                label="Export Package"
+                style="SOLID"
+                color="ACCENT"
+                icon="Box"
+                iconPosition="START"
+                onClick={() => setConfirmingExport(true)}
               />
             </div>
           </div>
@@ -263,6 +275,46 @@ export default function RulesReview() {
             </ReadOnlyGrid>
           </CardLayout>
         </div>
+
+        {confirmingExport && (
+          <DialogField
+            open={true}
+            onOpenChange={open => {
+              if (!open) setConfirmingExport(false)
+            }}
+            title="Export package?"
+            width="MEDIUM"
+            height="FIT"
+            closeOnOutsideClick={false}
+            marginBelow="NONE"
+          >
+            <p className="text-sm text-gray-600">
+              Only rules in the <span className="font-semibold text-gray-900">Accepted</span>{' '}
+              status will be included in the package. Rules that are still Pending review or
+              have been Rejected won&apos;t be exported.
+            </p>
+            <hr className="-mx-6 mt-6 border-gray-200" />
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <ButtonWidget
+                label="CANCEL"
+                style="OUTLINE"
+                color="ACCENT"
+                onClick={() => setConfirmingExport(false)}
+              />
+              <ButtonWidget
+                label="EXPORT"
+                style="SOLID"
+                color="ACCENT"
+                onClick={() => {
+                  setConfirmingExport(false)
+                  alert(
+                    'Export started (not wired up in this prototype). Only Accepted rules would be included.',
+                  )
+                }}
+              />
+            </div>
+          </DialogField>
+        )}
       </main>
     </div>
   )
