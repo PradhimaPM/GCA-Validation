@@ -62,7 +62,7 @@ export default function QuestionsLanding() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const triggerSystemImport = () => {
-    importSystemQuestions().then(() => setLocation('/questions-review'))
+    importSystemQuestions().then(() => setLocation('/questions'))
   }
 
   const triggerUploadPicker = () => {

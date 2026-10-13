@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { useLocation } from 'wouter'
 import {
   ReadOnlyGrid,
   GridColumn,
@@ -15,8 +14,6 @@ import UpdateQuestionDialog from '../components/update-question-dialog'
 import { EXCEL_ACCEPT, isExcelFile } from '../lib/excel-file'
 import {
   getApprovedQuestions,
-  getPendingQuestionCount,
-  getSystemQuestions,
   importCustomQuestions,
   formatQuestionTimestamp,
   type Question,
@@ -30,10 +27,7 @@ const CURRENT_USER = 'john.smith'
 const responseTypeChoices: QuestionResponseType[] = ['Radio Button', 'Dropdown']
 
 export default function Questions() {
-  const [, setLocation] = useLocation()
   const [questions, setQuestions] = useState<Question[]>([])
-  const [pendingCount, setPendingCount] = useState(0)
-  const [systemCount, setSystemCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [searchInput, setSearchInput] = useState('')
   const [appliedSearch, setAppliedSearch] = useState('')
@@ -45,14 +39,8 @@ export default function Questions() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const loadData = async () => {
-    const [approved, pending, system] = await Promise.all([
-      getApprovedQuestions(),
-      getPendingQuestionCount(),
-      getSystemQuestions(),
-    ])
+    const approved = await getApprovedQuestions()
     setQuestions(approved)
-    setPendingCount(pending)
-    setSystemCount(system.length)
     setLoading(false)
   }
 
@@ -95,44 +83,6 @@ export default function Questions() {
   return (
     <QuestionsShell>
       <div className="px-8 py-6">
-        {!loading && pendingCount > 0 && (
-          <div className="mb-4">
-            <MessageBanner
-              primaryText={`${pendingCount} ${pendingCount === 1 ? 'question still needs' : 'questions still need'} review.`}
-              secondaryText="Only approved questions appear here. Continue reviewing to approve or reject the rest."
-              backgroundColor="WARN"
-              highlightColor="WARN"
-              icon="warning"
-              buttons={[
-                {
-                  label: 'CONTINUE REVIEW',
-                  style: 'OUTLINE',
-                  color: 'ACCENT',
-                  onClick: () => setLocation('/questions-review'),
-                },
-              ]}
-              marginBelow="NONE"
-            />
-          </div>
-        )}
-
-        {!loading && pendingCount === 0 && systemCount > 0 && (
-          <div className="mb-4">
-            <MessageBanner
-              primaryText="No questions left for review."
-              secondaryText={
-                questions.some(q => q.source === 'Standard')
-                  ? undefined
-                  : 'None of the imported system questions were approved.'
-              }
-              backgroundColor="INFO"
-              highlightColor="INFO"
-              icon="info"
-              marginBelow="NONE"
-            />
-          </div>
-        )}
-
         {fileError && (
           <div className="mb-4">
             <MessageBanner
@@ -290,6 +240,12 @@ export default function Questions() {
             value="responseType"
           />
           <GridColumn
+            label="Source"
+            sortField="source"
+            width="2X"
+            value={(row: Question) => (row.source === 'Standard' ? 'System' : row.source)}
+          />
+          <GridColumn
             label="Last Modified"
             sortField="lastModified"
             width="3X"
@@ -303,7 +259,6 @@ export default function Questions() {
               />
             )}
           />
-          <GridColumn label="Source" sortField="source" width="2X" value="source" />
         </ReadOnlyGrid>
       </div>
 
