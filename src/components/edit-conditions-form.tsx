@@ -173,17 +173,25 @@ function ConditionFields({ condition, canRemove, onChange, onRemove }: Condition
   )
 }
 
+type RuleActiveStatus = 'Active' | 'Inactive'
+
+const activeStatusLabels = ['Active', 'Inactive']
+const activeStatusValues: RuleActiveStatus[] = ['Active', 'Inactive']
+
 interface EditConditionsFormProps {
   name: string
   onNameChange: (name: string) => void
+  activeStatus: RuleActiveStatus
+  onActiveStatusChange: (status: RuleActiveStatus) => void
   content: RuleReviewContent
   onChange: (content: RuleReviewContent) => void
 }
 
 /**
- * Inline edit form for a rule's name and conditions. Mirrors the Appian rule
- * editor layout: Name field at the top, then a Match choice, then one block
- * per condition with labeled, required fields and AND/OR between them.
+ * Inline edit form for a rule's name, status, and conditions. Mirrors the
+ * Appian rule editor layout: Name + Status on one row, then a Match choice,
+ * then one block per condition with labeled, required fields and AND/OR
+ * between them.
  *
  * Changes bubble up to the parent as they happen. The parent persists them
  * through the regular page footer (Save Draft / Accept).
@@ -191,6 +199,8 @@ interface EditConditionsFormProps {
 export default function EditConditionsForm({
   name,
   onNameChange,
+  activeStatus,
+  onActiveStatusChange,
   content,
   onChange,
 }: EditConditionsFormProps) {
@@ -257,13 +267,26 @@ export default function EditConditionsForm({
 
   return (
     <div className="space-y-6 px-5 py-5">
-      <TextField
-        label="Name"
-        required={true}
-        value={name}
-        saveInto={onNameChange}
-        marginBelow="NONE"
-      />
+      {/* Name on the left, Status radio on the right. Matches the Appian "Edit Rule" layout. */}
+      <div className="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-[2fr_1fr] md:items-start">
+        <TextField
+          label="Name"
+          required={true}
+          value={name}
+          saveInto={onNameChange}
+          marginBelow="NONE"
+        />
+        <RadioButtonField
+          label="Status"
+          required={true}
+          choiceLabels={activeStatusLabels}
+          choiceValues={activeStatusValues}
+          value={activeStatus}
+          saveInto={next => next && onActiveStatusChange(next as RuleActiveStatus)}
+          choiceLayout="COMPACT"
+          marginBelow="NONE"
+        />
+      </div>
 
       <div>
         <HeadingField

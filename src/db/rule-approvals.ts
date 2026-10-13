@@ -9,11 +9,15 @@
 import { getRules } from './rules'
 
 export type RuleApprovalStatus = 'Accepted' | 'Rejected' | 'Pending'
+export type RuleActiveStatus = 'Active' | 'Inactive'
 
 export interface RuleApproval {
   id: number
   name: string
+  /** Review status: whether the rule has been Accepted, Rejected, or still Pending. */
   status: RuleApprovalStatus
+  /** Operational status: whether the rule is currently in effect. Separate from review status. */
+  activeStatus: RuleActiveStatus
   /** Number of individual conditions across the rule. */
   conditions: number
   /** Number of condition groups wrapping those conditions. */
@@ -40,6 +44,20 @@ const statusCycle: RuleApprovalStatus[] = [
   'Pending',
 ]
 
+// Mix of Active/Inactive, independent of review status, so the grid shows both.
+const activeStatusCycle: RuleActiveStatus[] = [
+  'Active',
+  'Active',
+  'Inactive',
+  'Active',
+  'Inactive',
+  'Active',
+  'Active',
+  'Inactive',
+  'Active',
+  'Inactive',
+]
+
 let ruleApprovals: RuleApproval[] | null = null
 
 async function load(): Promise<RuleApproval[]> {
@@ -49,6 +67,7 @@ async function load(): Promise<RuleApproval[]> {
       id: rule.id,
       name: rule.name,
       status: statusCycle[index % statusCycle.length],
+      activeStatus: activeStatusCycle[index % activeStatusCycle.length],
       conditions: rule.conditions,
       conditionGroups: rule.conditionGroups,
       includedClauses: rule.includedClauses,

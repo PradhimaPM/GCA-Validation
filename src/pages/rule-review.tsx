@@ -33,7 +33,12 @@ import {
   type ConditionJoin,
   type ReviewClause,
 } from '../db/rule-reviews'
-import { updateRuleApproval, type RuleApproval, type RuleApprovalStatus } from '../db/rule-approvals'
+import {
+  updateRuleApproval,
+  type RuleApproval,
+  type RuleApprovalStatus,
+  type RuleActiveStatus,
+} from '../db/rule-approvals'
 
 const navPages = [
   { label: 'Clause Sets', icon: LayoutGrid },
@@ -173,6 +178,7 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
   const [selectedClauseId, setSelectedClauseId] = useState<number | null>(null)
   const [viewingClauseId, setViewingClauseId] = useState<number | null>(null)
   const [nameInput, setNameInput] = useState('')
+  const [activeStatusInput, setActiveStatusInput] = useState<RuleActiveStatus>('Active')
 
   useEffect(() => {
     let cancelled = false
@@ -192,7 +198,10 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
       setReview(copy)
       setDirty(false)
       const foundRule = rules.find(r => r.id === ruleId)
-      if (foundRule) setNameInput(foundRule.name)
+      if (foundRule) {
+        setNameInput(foundRule.name)
+        setActiveStatusInput(foundRule.activeStatus)
+      }
       const included = copy.clauses.filter(c => c.outcome === 'Included')
       const excluded = copy.clauses.filter(c => c.outcome === 'Excluded')
       setSelectedClauseId([...included, ...excluded][0]?.id ?? null)
@@ -229,24 +238,33 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
   /* --------------------------------- actions --------------------------------- */
 
   /** Commit the dialog's local edits back into the page's review state. */
-  const handleApplyConditions = (name: string, content: RuleReviewContent) => {
+  const handleApplyConditions = (
+    name: string,
+    activeStatus: RuleActiveStatus,
+    content: RuleReviewContent,
+  ) => {
     setNameInput(name)
+    setActiveStatusInput(activeStatus)
     setReview(prev => (prev ? { ...prev, ...content } : prev))
     setDirty(true)
     setEditingConditions(false)
   }
 
-  /** Persist a name change, if any, so the Rules list and header stay in sync. */
-  const persistNameIfChanged = async () => {
-    if (!rule || nameInput === rule.name) return
-    await updateRuleApproval(ruleId, { name: nameInput })
+  /** Persist name/status changes, if any, so the Rules list and header stay in sync. */
+  const persistHeaderIfChanged = async () => {
+    if (!rule) return
+    const patch: Partial<RuleApproval> = {}
+    if (nameInput !== rule.name) patch.name = nameInput
+    if (activeStatusInput !== rule.activeStatus) patch.activeStatus = activeStatusInput
+    if (Object.keys(patch).length === 0) return
+    await updateRuleApproval(ruleId, patch)
     setQueue(await getReviewQueue())
   }
 
   const handleDecision = async (decision: 'accept' | 'reject') => {
     if (!review) return
     setBusy(true)
-    await persistNameIfChanged()
+    await persistHeaderIfChanged()
     const content = toContent(review)
     if (decision === 'accept') await acceptRuleReview(ruleId, content)
     else await rejectRuleReview(ruleId, content)
@@ -668,6 +686,7 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
       {editingConditions && (
         <EditConditionsDialog
           initialName={nameInput}
+          initialActiveStatus={activeStatusInput}
           initialContent={toContent(review)}
           busy={busy}
           onClose={() => setEditingConditions(false)}
@@ -681,18 +700,21 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
 /** Modal that wraps EditConditionsForm with a local draft so changes are only committed on Apply. */
 function EditConditionsDialog({
   initialName,
+  initialActiveStatus,
   initialContent,
   busy,
   onClose,
   onApply,
 }: {
   initialName: string
+  initialActiveStatus: RuleActiveStatus
   initialContent: RuleReviewContent
   busy: boolean
   onClose: () => void
-  onApply: (name: string, content: RuleReviewContent) => void
+  onApply: (name: string, activeStatus: RuleActiveStatus, content: RuleReviewContent) => void
 }) {
   const [name, setName] = useState(initialName)
+  const [activeStatus, setActiveStatus] = useState<RuleActiveStatus>(initialActiveStatus)
   const [content, setContent] = useState<RuleReviewContent>(() => structuredClone(initialContent))
 
   return (
@@ -712,6 +734,8 @@ function EditConditionsDialog({
           <EditConditionsForm
             name={name}
             onNameChange={setName}
+            activeStatus={activeStatus}
+            onActiveStatusChange={setActiveStatus}
             content={content}
             onChange={setContent}
           />
@@ -728,7 +752,7 @@ function EditConditionsDialog({
             style="SOLID"
             color="ACCENT"
             disabled={busy}
-            onClick={() => onApply(name, content)}
+            onClick={() => onApply(name, activeStatus, content)}
           />
         </div>
       </div>

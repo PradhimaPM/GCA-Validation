@@ -27,6 +27,7 @@ import {
   formatRuleApprovalConditions,
   type RuleApproval,
   type RuleApprovalStatus,
+  type RuleActiveStatus,
 } from '../db/rule-approvals'
 import { formatRuleTimestamp } from '../db/rules'
 
@@ -44,6 +45,11 @@ const statusTagColors: Record<RuleApprovalStatus, { background: string; text: st
   Accepted: { background: '#D7F3E0', text: '#166534' },
   Rejected: { background: '#FDE2E2', text: '#991B1B' },
   Pending: { background: '#DBEAFE', text: '#1E40AF' },
+}
+
+const activeStatusTagColors: Record<RuleActiveStatus, { background: string; text: string }> = {
+  Active: { background: '#D7F3E0', text: '#166534' },
+  Inactive: { background: '#E5E7EB', text: '#374151' },
 }
 
 export default function RulesReview() {
@@ -205,7 +211,7 @@ export default function RulesReview() {
                 value="name"
               />
               <GridColumn
-                label="Status"
+                label="Review Status"
                 sortField="status"
                 width="NARROW"
                 value={(row: RuleApproval) => (
@@ -216,6 +222,24 @@ export default function RulesReview() {
                         text: row.status,
                         backgroundColor: statusTagColors[row.status].background,
                         textColor: statusTagColors[row.status].text,
+                      },
+                    ]}
+                    marginBelow="NONE"
+                  />
+                )}
+              />
+              <GridColumn
+                label="Status"
+                sortField="activeStatus"
+                width="NARROW"
+                value={(row: RuleApproval) => (
+                  <TagField
+                    size="SMALL"
+                    tags={[
+                      {
+                        text: row.activeStatus,
+                        backgroundColor: activeStatusTagColors[row.activeStatus].background,
+                        textColor: activeStatusTagColors[row.activeStatus].text,
                       },
                     ]}
                     marginBelow="NONE"
