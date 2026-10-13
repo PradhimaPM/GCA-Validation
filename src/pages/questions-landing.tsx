@@ -89,18 +89,18 @@ export default function QuestionsLanding() {
 
   /** A compact, horizontal System Questions card used across all three options. */
   const CompactSystemCard = () => (
-    <div className="flex items-center gap-5 rounded-md border border-gray-200 bg-white px-6 py-5 shadow-sm">
+    <div className="flex items-center gap-6 rounded-md border border-gray-200 bg-white px-8 py-10 shadow-sm">
       <div
-        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full"
+        className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full"
         style={{ backgroundColor: '#E8E7FD', color: '#2322F0' }}
       >
-        <Library size={26} aria-hidden="true" />
+        <Library size={36} aria-hidden="true" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-base font-semibold text-gray-900">
+        <p className="text-lg font-semibold text-gray-900">
           Import system questions
         </p>
-        <p className="text-sm text-gray-600">
+        <p className="mt-1 text-sm text-gray-600">
           Add the standard questions that ship with the solution. You can
           review, edit, or remove them later.
         </p>
@@ -119,7 +119,7 @@ export default function QuestionsLanding() {
 
   /** The subtle "import manually" row used in Options 2 and 3. */
   const ManualInlineCard = () => (
-    <div className="flex items-center justify-between gap-4 rounded-md border border-dashed border-gray-300 bg-gray-50 px-5 py-4">
+    <div className="flex items-center justify-between gap-4 rounded-md border border-dashed border-gray-300 bg-gray-50 px-6 py-6">
       <div className="flex items-start gap-3">
         <PencilLine
           size={20}
@@ -155,18 +155,18 @@ export default function QuestionsLanding() {
   const option1Content = (
     <div className="flex flex-col gap-4 pt-2">
       <CompactSystemCard />
-      <div className="flex items-center gap-5 rounded-md border border-gray-200 bg-white px-6 py-5 shadow-sm">
+      <div className="flex items-center gap-6 rounded-md border border-gray-200 bg-white px-8 py-10 shadow-sm">
         <div
-          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full"
+          className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full"
           style={{ backgroundColor: '#F3F4F6', color: '#4B5563' }}
         >
-          <PencilLine size={26} aria-hidden="true" />
+          <PencilLine size={36} aria-hidden="true" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-base font-semibold text-gray-900">
+          <p className="text-lg font-semibold text-gray-900">
             Import manually
           </p>
-          <p className="text-sm text-gray-600">
+          <p className="mt-1 text-sm text-gray-600">
             Upload your own spreadsheet of questions. You can review, edit, or
             remove them before saving.
           </p>
