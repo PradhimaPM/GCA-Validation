@@ -117,35 +117,7 @@ export default function QuestionsLanding() {
     </div>
   )
 
-  /** The "import manually" row used in Option 2 — solid border, same visual weight as the hero card above it. */
-  const ManualRowCardSolid = () => (
-    <div className="flex items-center justify-between gap-4 rounded-md border border-gray-200 bg-white px-5 py-4">
-      <div className="flex items-start gap-3">
-        <PencilLine
-          size={20}
-          aria-hidden="true"
-          className="mt-0.5 shrink-0 text-gray-500"
-        />
-        <div>
-          <p className="text-sm font-semibold text-gray-900">Import manually</p>
-          <p className="text-xs text-gray-600">
-            Upload a spreadsheet to add many questions at once.
-          </p>
-        </div>
-      </div>
-      <ButtonWidget
-        label="Upload Excel"
-        style="OUTLINE"
-        color="ACCENT"
-        size="SMALL"
-        icon="Upload"
-        iconPosition="START"
-        onClick={triggerUploadPicker}
-      />
-    </div>
-  )
-
-  /** The subtle "import manually" row used in Option 3 below the benefit cards. */
+  /** The subtle "import manually" row used in Options 2 and 3. */
   const ManualInlineCard = () => (
     <div className="flex items-center justify-between gap-4 rounded-md border border-dashed border-gray-300 bg-gray-50 px-5 py-4">
       <div className="flex items-start gap-3">
@@ -212,12 +184,12 @@ export default function QuestionsLanding() {
     </div>
   )
 
-  /** Option 2 — compact system card up top, bordered manual row below. */
+  /** Option 2 — compact system card up top, subtle dashed manual row below. */
   const option2Content = (
     <div className="mx-auto max-w-xl pt-2">
       <CompactSystemCard />
       <div className="mt-6">
-        <ManualRowCardSolid />
+        <ManualInlineCard />
       </div>
     </div>
   )
