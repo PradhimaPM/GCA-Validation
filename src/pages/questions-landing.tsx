@@ -153,7 +153,7 @@ export default function QuestionsLanding() {
 
   /** Option 1 — compact system card on top, matching compact manual card below. */
   const option1Content = (
-    <div className="mx-auto flex max-w-xl flex-col gap-4 pt-2">
+    <div className="mx-auto flex max-w-5xl flex-col gap-4 pt-2">
       <CompactSystemCard />
       <div className="flex items-center gap-5 rounded-md border border-gray-200 bg-white px-6 py-5 shadow-sm">
         <div
@@ -186,7 +186,7 @@ export default function QuestionsLanding() {
 
   /** Option 2 — compact system card up top, subtle dashed manual row below. */
   const option2Content = (
-    <div className="mx-auto max-w-xl pt-2">
+    <div className="mx-auto max-w-5xl pt-2">
       <CompactSystemCard />
       <div className="mt-6">
         <ManualInlineCard />
@@ -196,7 +196,7 @@ export default function QuestionsLanding() {
 
   /** Option 3 — compact system card at top, three visual benefit cards, then the manual row. */
   const option3Content = (
-    <div className="mx-auto max-w-4xl pt-2">
+    <div className="mx-auto max-w-5xl pt-2">
       <CompactSystemCard />
 
       <div className="mt-10 mb-5 text-center">
