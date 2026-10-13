@@ -8,6 +8,7 @@ import {
   RichTextDisplayField,
   TextItem,
   MessageBanner,
+  TabsField,
 } from '@pglevy/sailwind'
 import QuestionsShell from '../components/questions-shell'
 import UpdateQuestionDialog from '../components/update-question-dialog'
@@ -36,6 +37,7 @@ export default function Questions() {
   const [creating, setCreating] = useState(false)
   const [importMessage, setImportMessage] = useState<string | null>(null)
   const [fileError, setFileError] = useState(false)
+  const [view, setView] = useState<'option1' | 'option2'>('option1')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const loadData = async () => {
@@ -200,6 +202,20 @@ export default function Questions() {
           tabIndex={-1}
         />
 
+        <div className="mb-4">
+          <TabsField
+            tabs={[
+              { value: 'option1', label: 'Option 1' },
+              { value: 'option2', label: 'Option 2' },
+            ]}
+            value={view}
+            onValueChange={v => setView(v as 'option1' | 'option2')}
+            variant="UNDERLINE"
+            navigationOnly={true}
+            marginBelow="NONE"
+          />
+        </div>
+
         <ReadOnlyGrid
           data={filteredQuestions}
           pageSize={20}
@@ -217,28 +233,35 @@ export default function Questions() {
           <GridColumn
             label="Question"
             sortField="question"
-            width="6X"
+            width={view === 'option2' ? '8X' : '6X'}
             value={(row: Question) => (
-              <RichTextDisplayField
-                value={[
-                  <TextItem
-                    key="question"
-                    text={row.question}
-                    color="ACCENT"
-                    link={() => setSelectedQuestion(row)}
-                    linkStyle="STANDALONE"
-                  />,
-                ]}
-                marginBelow="NONE"
-              />
+              <div className="flex flex-col gap-0.5">
+                <RichTextDisplayField
+                  value={[
+                    <TextItem
+                      key="question"
+                      text={row.question}
+                      color="ACCENT"
+                      link={() => setSelectedQuestion(row)}
+                      linkStyle="STANDALONE"
+                    />,
+                  ]}
+                  marginBelow="NONE"
+                />
+                {view === 'option2' && (
+                  <span className="text-xs text-gray-500">{row.responseType}</span>
+                )}
+              </div>
             )}
           />
-          <GridColumn
-            label="Response Type"
-            sortField="responseType"
-            width="2X"
-            value="responseType"
-          />
+          {view === 'option1' && (
+            <GridColumn
+              label="Response Type"
+              sortField="responseType"
+              width="2X"
+              value="responseType"
+            />
+          )}
           <GridColumn
             label="Source"
             sortField="source"
