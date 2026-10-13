@@ -20,7 +20,7 @@ import {
   Layers,
   CircleHelp,
   Shuffle,
-  SquarePen,
+  Pencil,
 } from 'lucide-react'
 import {
   getRuleApprovals,
@@ -269,7 +269,7 @@ export default function RulesReview() {
                     aria-label={`Edit ${row.name}`}
                     className="inline-flex items-center justify-center rounded p-1 text-blue-700 hover:bg-blue-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                   >
-                    <SquarePen size={18} aria-hidden="true" />
+                    <Pencil size={18} aria-hidden="true" />
                   </button>
                 )}
               />

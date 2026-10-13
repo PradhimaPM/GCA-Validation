@@ -276,18 +276,18 @@ export default function Rules() {
                 )}
               />
               <GridColumn
-                label=""
+                label="Edit"
                 width="ICON"
                 align="CENTER"
                 value={(row: Rule) => (
                   <ButtonWidget
                     style="GHOST"
-                    color="SECONDARY"
+                    color="ACCENT"
                     size="SMALL"
-                    icon="EllipsisVertical"
-                    tooltip="Row actions"
-                    accessibilityText={`Actions for ${row.name}`}
-                    onClick={() => alert(`Row actions for ${row.name}`)}
+                    icon="Pencil"
+                    tooltip="Edit rule"
+                    accessibilityText={`Edit ${row.name}`}
+                    onClick={() => alert(`Edit rule: ${row.name}`)}
                   />
                 )}
               />

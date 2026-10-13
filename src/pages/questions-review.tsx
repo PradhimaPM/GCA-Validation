@@ -61,26 +61,45 @@ export default function QuestionsReview() {
   return (
     <QuestionsShell>
       <div className="px-8 py-6">
-        {/* Header: just the title and short subtitle. */}
-        <div className="mb-5">
-          <HeadingField
-            text="Review system questions"
-            size="MEDIUM_PLUS"
-            headingTag="H1"
-            fontWeight="SEMI_BOLD"
-            marginBelow="EVEN_LESS"
-          />
-          <RichTextDisplayField
-            value={[
-              <TextItem
-                key="sub"
-                text="Approve or reject each imported question. Approved questions are added to your Questions tab."
-                color="SECONDARY"
-                size="MEDIUM"
-              />,
-            ]}
-            marginBelow="NONE"
-          />
+        {/* Header: title + subtitle on the left, a cross-nav button on the right that
+            jumps to the Questions tab. Trailing arrow icon signals "go to next page",
+            and OUTLINE style keeps it secondary to the per-row review actions. */}
+        <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <HeadingField
+              text="Review system questions"
+              size="MEDIUM_PLUS"
+              headingTag="H1"
+              fontWeight="SEMI_BOLD"
+              marginBelow="EVEN_LESS"
+            />
+            <RichTextDisplayField
+              value={[
+                <TextItem
+                  key="sub"
+                  text="Approve or reject each imported question. Approved questions are added to your Questions tab — come back anytime to review more."
+                  color="SECONDARY"
+                  size="MEDIUM"
+                />,
+              ]}
+              marginBelow="NONE"
+            />
+          </div>
+          <div className="shrink-0">
+            <ButtonWidget
+              label={
+                counts.approved > 0
+                  ? `View ${counts.approved} approved question${counts.approved === 1 ? '' : 's'}`
+                  : 'View questions'
+              }
+              style="OUTLINE"
+              color="ACCENT"
+              icon="ArrowRight"
+              iconPosition="END"
+              tooltip="Open the Questions tab. You can come back to continue reviewing."
+              onClick={() => setLocation('/questions')}
+            />
+          </div>
         </div>
 
         {/* Completion banner — carries its own CTA so the user does not have to hunt for Done. */}
