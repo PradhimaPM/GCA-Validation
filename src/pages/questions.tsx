@@ -233,7 +233,7 @@ export default function Questions() {
           <GridColumn
             label="Question"
             sortField="question"
-            width={view === 'option2' ? '8X' : '6X'}
+            width={view === 'option2' ? '7X' : '6X'}
             value={(row: Question) => (
               <div className="flex flex-col gap-0.5">
                 <RichTextDisplayField
@@ -249,24 +249,26 @@ export default function Questions() {
                   marginBelow="NONE"
                 />
                 {view === 'option2' && (
-                  <span className="text-xs text-gray-500">{row.responseType}</span>
+                  <span className="text-xs text-gray-500">
+                    {row.source === 'Standard' ? 'System' : row.source}
+                  </span>
                 )}
               </div>
             )}
           />
           {view === 'option1' && (
             <GridColumn
-              label="Response Type"
-              sortField="responseType"
+              label="Source"
+              sortField="source"
               width="2X"
-              value="responseType"
+              value={(row: Question) => (row.source === 'Standard' ? 'System' : row.source)}
             />
           )}
           <GridColumn
-            label="Source"
-            sortField="source"
+            label="Response Type"
+            sortField="responseType"
             width="2X"
-            value={(row: Question) => (row.source === 'Standard' ? 'System' : row.source)}
+            value="responseType"
           />
           <GridColumn
             label="Last Modified"
