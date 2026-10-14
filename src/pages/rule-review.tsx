@@ -628,7 +628,8 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
           <p className="text-base text-gray-700">
             Once rejected, this rule can&apos;t be edited or reviewed again.
           </p>
-          <div className="mt-6 flex justify-end gap-3">
+          <hr className="-mx-6 mt-6 border-gray-200" />
+          <div className="mt-4 flex items-center justify-between gap-3">
             <ButtonWidget
               label="CANCEL"
               style="OUTLINE"
