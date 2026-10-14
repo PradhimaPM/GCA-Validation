@@ -39,13 +39,12 @@ const navPages = [
   { label: 'Rules', icon: Shuffle, isSelected: true },
 ]
 
-const reviewStatusChoices: RuleApprovalStatus[] = ['Accepted', 'Rejected', 'Pending']
+const reviewStatusChoices: RuleApprovalStatus[] = ['Pending', 'Approved']
 const activeStatusChoices: RuleActiveStatus[] = ['Active', 'Inactive']
 
 const statusTagColors: Record<RuleApprovalStatus, { background: string; text: string }> = {
-  Accepted: { background: '#D7F3E0', text: '#166534' },
-  Rejected: { background: '#FDE2E2', text: '#991B1B' },
   Pending: { background: '#DBEAFE', text: '#1E40AF' },
+  Approved: { background: '#D7F3E0', text: '#166534' },
 }
 
 export default function RulesReview() {
@@ -318,7 +317,7 @@ export default function RulesReview() {
             marginBelow="NONE"
           >
             <p className="text-sm text-gray-600">
-              Only rules in the <span className="font-semibold text-gray-900">Accepted</span>{' '}
+              Only rules in the <span className="font-semibold text-gray-900">Approved</span>{' '}
               status will be included in the package.
             </p>
             <hr className="-mx-6 mt-6 border-gray-200" />
@@ -336,7 +335,7 @@ export default function RulesReview() {
                 onClick={() => {
                   setConfirmingExport(false)
                   alert(
-                    'Export started (not wired up in this prototype). Only Accepted rules would be included.',
+                    'Export started (not wired up in this prototype). Only Approved rules would be included.',
                   )
                 }}
               />

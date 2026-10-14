@@ -2,19 +2,19 @@
  * Rule approvals data layer.
  *
  * Same rules as `rules.ts`, but each one carries an approval status
- * (Approved, Rejected, Pending) instead of the Active/Draft lifecycle status.
+ * (Approved or Pending) instead of the Active/Draft lifecycle status.
  * Seed data is derived from `getRules()` so both pages stay in sync on names,
  * conditions, and timestamps.
  */
 import { getRules } from './rules'
 
-export type RuleApprovalStatus = 'Accepted' | 'Rejected' | 'Pending'
+export type RuleApprovalStatus = 'Pending' | 'Approved'
 export type RuleActiveStatus = 'Active' | 'Inactive'
 
 export interface RuleApproval {
   id: number
   name: string
-  /** Review status: whether the rule has been Accepted, Rejected, or still Pending. */
+  /** Review status: whether the rule is still Pending or has been Approved. */
   status: RuleApprovalStatus
   /** Operational status: whether the rule is currently in effect. Separate from review status. */
   activeStatus: RuleActiveStatus
@@ -30,17 +30,17 @@ export interface RuleApproval {
   modifiedBy: string
 }
 
-// Deterministic spread so every status shows up on the first page of the grid.
+// Deterministic spread so both statuses show up on the first page of the grid.
 const statusCycle: RuleApprovalStatus[] = [
   'Pending',
-  'Accepted',
-  'Accepted',
-  'Rejected',
-  'Accepted',
+  'Approved',
+  'Approved',
   'Pending',
-  'Accepted',
-  'Rejected',
-  'Accepted',
+  'Approved',
+  'Pending',
+  'Approved',
+  'Pending',
+  'Approved',
   'Pending',
 ]
 

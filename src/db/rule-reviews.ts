@@ -587,8 +587,8 @@ export async function updateRuleReview(
 
 /**
  * Stores the reviewer's edits without changing the rule's status. Works for
- * rules in any status (Pending / Approved / Rejected) so reviewers can tweak
- * a rule's content after a decision has already been made.
+ * rules in any status (Pending or Approved), so reviewers can tweak a rule's
+ * content after it has been approved.
  */
 export async function saveRuleReviewDraft(
   ruleId: number,
@@ -600,8 +600,8 @@ export async function saveRuleReviewDraft(
 /**
  * Stores the reviewer's edits and sets the rule's status. `lastUpdated` is
  * left alone so the review queue keeps its order while the reviewer works
- * through it. Accepts transitions from any status, which lets a reviewer
- * revert a decision (back to Pending) or re-decide after reverting.
+ * through it. Accepts transitions from any status, so a reviewer can
+ * re-approve a rule after further edits.
  */
 async function decideRuleReview(
   ruleId: number,
@@ -614,18 +614,11 @@ async function decideRuleReview(
   return updated
 }
 
-export async function acceptRuleReview(
+export async function approveRuleReview(
   ruleId: number,
   content: RuleReviewContent,
 ): Promise<RuleReview | undefined> {
-  return decideRuleReview(ruleId, content, 'Accepted')
-}
-
-export async function rejectRuleReview(
-  ruleId: number,
-  content: RuleReviewContent,
-): Promise<RuleReview | undefined> {
-  return decideRuleReview(ruleId, content, 'Rejected')
+  return decideRuleReview(ruleId, content, 'Approved')
 }
 
 

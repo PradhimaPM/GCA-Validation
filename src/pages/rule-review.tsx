@@ -10,6 +10,8 @@ import {
   TextItem,
   TagField,
   MessageBanner,
+  TextField,
+  RadioButtonField,
 } from '@pglevy/sailwind'
 import {
   LayoutGrid,
@@ -20,12 +22,15 @@ import {
   ChevronDown,
   ChevronUp,
 } from 'lucide-react'
-import EditConditionsForm from '../components/edit-conditions-form'
+import {
+  ConditionsEditor,
+  type EditConditionsMode,
+} from '../components/edit-conditions-form'
 import {
   getReviewQueue,
   getRuleReview,
-  acceptRuleReview,
-  rejectRuleReview,
+  approveRuleReview,
+  saveRuleReviewDraft,
   countConditions,
   type RuleReview,
   type RuleReviewContent,
@@ -49,9 +54,8 @@ const navPages = [
 ]
 
 const statusTagColors: Record<RuleApprovalStatus, { background: string; text: string }> = {
-  Accepted: { background: '#D7F3E0', text: '#166534' },
-  Rejected: { background: '#FDE2E2', text: '#991B1B' },
   Pending: { background: '#DBEAFE', text: '#1E40AF' },
+  Approved: { background: '#D7F3E0', text: '#166534' },
 }
 
 const UNSAVED_CONFIRM = 'You have unsaved changes. Discard them and continue?'
@@ -173,8 +177,7 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
   const [dirty, setDirty] = useState(false)
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
-  const [editingConditions, setEditingConditions] = useState(false)
-  const [confirmingReject, setConfirmingReject] = useState(false)
+  const [conditionsMode, setConditionsMode] = useState<EditConditionsMode>('PREVIEW')
   const [selectedClauseId, setSelectedClauseId] = useState<number | null>(null)
   const [viewingClauseId, setViewingClauseId] = useState<number | null>(null)
   const [nameInput, setNameInput] = useState('')
@@ -184,7 +187,7 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
     let cancelled = false
     setLoadState('loading')
     setDone(false)
-    setEditingConditions(false)
+    setConditionsMode('PREVIEW')
     Promise.all([getReviewQueue(), getRuleReview(ruleId)]).then(([rules, stored]) => {
       if (cancelled) return
       setQueue(rules)
@@ -237,17 +240,10 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
 
   /* --------------------------------- actions --------------------------------- */
 
-  /** Commit the dialog's local edits back into the page's review state. */
-  const handleApplyConditions = (
-    name: string,
-    activeStatus: RuleActiveStatus,
-    content: RuleReviewContent,
-  ) => {
-    setNameInput(name)
-    setActiveStatusInput(activeStatus)
+  /** Edits made in-place in EDIT mode write straight through to the review state. */
+  const handleConditionsChange = (content: RuleReviewContent) => {
     setReview(prev => (prev ? { ...prev, ...content } : prev))
     setDirty(true)
-    setEditingConditions(false)
   }
 
   /** Persist name/status changes, if any, so the Rules list and header stay in sync. */
@@ -261,16 +257,25 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
     setQueue(await getReviewQueue())
   }
 
-  const handleDecision = async (decision: 'accept' | 'reject') => {
+  /** Persist edits without changing the rule's status. */
+  const handleSave = async () => {
     if (!review) return
     setBusy(true)
     await persistHeaderIfChanged()
-    const content = toContent(review)
-    if (decision === 'accept') await acceptRuleReview(ruleId, content)
-    else await rejectRuleReview(ruleId, content)
+    await saveRuleReviewDraft(ruleId, toContent(review))
     setDirty(false)
     setBusy(false)
-    // Return to the Rules list; the reviewer picks the next rule to open.
+    setLocation('/rules-review')
+  }
+
+  /** Persist edits AND mark the rule as Approved. */
+  const handleSaveAndApprove = async () => {
+    if (!review) return
+    setBusy(true)
+    await persistHeaderIfChanged()
+    await approveRuleReview(ruleId, toContent(review))
+    setDirty(false)
+    setBusy(false)
     setLocation('/rules-review')
   }
 
@@ -316,9 +321,8 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
 
   if (done) {
     const counts = {
-      Accepted: queue.filter(r => r.status === 'Accepted').length,
-      Rejected: queue.filter(r => r.status === 'Rejected').length,
       Pending: queue.filter(r => r.status === 'Pending').length,
+      Approved: queue.filter(r => r.status === 'Approved').length,
     }
     return renderShell(
       <div className="p-8 max-w-2xl">
@@ -415,25 +419,34 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
         {/* Left pane: rule, conditions, included and excluded clauses */}
         <section aria-label="Rule" className="min-w-0 flex-[3] overflow-y-auto px-8 py-6">
           <div className="rounded-md border border-gray-200 bg-white">
-            <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-5 py-4">
-              <div className="min-w-0">
-                <HeadingField
-                  text={nameInput || rule.name}
-                  size="MEDIUM_PLUS"
-                  headingTag="H2"
-                  fontWeight="SEMI_BOLD"
-                  marginBelow="EVEN_LESS"
-                />
-                <p className="text-sm text-gray-600">
-                  {pluralize(conditionTotal, 'condition')} ·{' '}
-                  {pluralize(review.groups.length, 'group')}
-                </p>
-              </div>
+            {/* Rule header row: Name (read-only) on the left, Status (always editable) on the right. */}
+            <div className="grid grid-cols-1 gap-x-6 gap-y-4 border-b border-gray-200 px-5 py-4 md:grid-cols-[2fr_1fr] md:items-start">
+              <TextField
+                label="Name"
+                required={true}
+                readOnly={true}
+                value={nameInput || rule.name}
+                marginBelow="NONE"
+              />
+              <RadioButtonField
+                label="Status"
+                required={true}
+                choiceLabels={['Active', 'Inactive']}
+                choiceValues={['Active', 'Inactive']}
+                value={activeStatusInput}
+                saveInto={value => {
+                  if (!value) return
+                  setActiveStatusInput(value as RuleActiveStatus)
+                  setDirty(true)
+                }}
+                choiceLayout="COMPACT"
+                marginBelow="NONE"
+              />
             </div>
 
             <div className="px-5 py-4">
               <div className="mb-4 flex items-start justify-between gap-4">
-                <div>
+                <div className="min-w-0">
                   <HeadingField
                     text="Conditions"
                     size="MEDIUM_PLUS"
@@ -442,49 +455,69 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
                     marginBelow="EVEN_LESS"
                   />
                   <p className="text-xs text-gray-600">
-                    Clause set data that triggers this rule
+                    {conditionsMode === 'EDIT'
+                      ? "Ensure multiple conditions of the same clause data type aren't pointing to multiple different values"
+                      : `Clause set data that triggers this rule · ${pluralize(conditionTotal, 'condition')} · ${pluralize(review.groups.length, 'group')}`}
                   </p>
                 </div>
-                <div className="shrink-0">
+                <div className="shrink-0 inline-flex items-center gap-1 rounded-md bg-gray-100 p-1">
                   <ButtonWidget
-                    label="Edit Conditions"
-                    style="OUTLINE"
-                    color="ACCENT"
+                    label="EDIT"
+                    style={conditionsMode === 'EDIT' ? 'OUTLINE' : 'GHOST'}
+                    color={conditionsMode === 'EDIT' ? 'ACCENT' : 'STANDARD'}
                     size="SMALL"
-                    icon="Pencil"
+                    icon="SquarePen"
                     iconPosition="START"
-                    onClick={() => setEditingConditions(true)}
+                    onClick={() => setConditionsMode('EDIT')}
+                  />
+                  <ButtonWidget
+                    label="PREVIEW"
+                    style={conditionsMode === 'PREVIEW' ? 'OUTLINE' : 'GHOST'}
+                    color={conditionsMode === 'PREVIEW' ? 'ACCENT' : 'STANDARD'}
+                    size="SMALL"
+                    icon="ListChecks"
+                    iconPosition="START"
+                    onClick={() => setConditionsMode('PREVIEW')}
                   />
                 </div>
               </div>
 
-              {conditionTotal === 0 && (
-                <p className="text-sm text-gray-700">
-                  This rule has no conditions, so it applies to every clause set.
-                </p>
-              )}
+              {conditionsMode === 'EDIT' ? (
+                <ConditionsEditor
+                  content={toContent(review)}
+                  onChange={handleConditionsChange}
+                />
+              ) : (
+                <>
+                  {conditionTotal === 0 && (
+                    <p className="text-sm text-gray-700">
+                      This rule has no conditions, so it applies to every clause set.
+                    </p>
+                  )}
 
-              <div className="space-y-4">
-                {review.conditions.length > 0 && (
-                  <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
-                    <ConditionStack conditions={review.conditions} join={review.join} />
-                  </div>
-                )}
-
-                {review.groups.map((group, groupIndex) => (
-                  <div key={group.id}>
-                    {(review.conditions.length > 0 || groupIndex > 0) && (
-                      <p className="pb-2 text-xs font-semibold text-gray-600">{review.join}</p>
+                  <div className="space-y-4">
+                    {review.conditions.length > 0 && (
+                      <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
+                        <ConditionStack conditions={review.conditions} join={review.join} />
+                      </div>
                     )}
-                    <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
-                      <p className="mb-3 text-xs text-gray-700">
-                        Condition Group {groupIndex + 1}
-                      </p>
-                      <ConditionStack conditions={group.conditions} join={group.join} />
-                    </div>
+
+                    {review.groups.map((group, groupIndex) => (
+                      <div key={group.id}>
+                        {(review.conditions.length > 0 || groupIndex > 0) && (
+                          <p className="pb-2 text-xs font-semibold text-gray-600">{review.join}</p>
+                        )}
+                        <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
+                          <p className="mb-3 text-xs text-gray-700">
+                            Condition Group {groupIndex + 1}
+                          </p>
+                          <ConditionStack conditions={group.conditions} join={group.join} />
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -597,58 +630,21 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
         </div>
         <div className="flex items-center gap-3">
           <ButtonWidget
-            label="Reject"
+            label="Save"
             style="OUTLINE"
-            color="NEGATIVE"
-            disabled={busy || rule.status === 'Rejected'}
-            onClick={() => setConfirmingReject(true)}
+            color="ACCENT"
+            disabled={busy}
+            onClick={handleSave}
           />
           <ButtonWidget
-            label="Accept"
+            label="Save and Approve"
             style="SOLID"
             color="ACCENT"
-            disabled={busy || rule.status === 'Accepted'}
-            onClick={() => handleDecision('accept')}
+            disabled={busy}
+            onClick={handleSaveAndApprove}
           />
         </div>
       </div>
-
-      {confirmingReject && (
-        <DialogField
-          open={true}
-          onOpenChange={open => {
-            if (!open) setConfirmingReject(false)
-          }}
-          title="Reject this rule?"
-          width="MEDIUM"
-          height="FIT"
-          closeOnOutsideClick={false}
-          marginBelow="NONE"
-        >
-          <p className="text-base text-gray-700">
-            Once rejected, this rule can&apos;t be edited or reviewed again.
-          </p>
-          <hr className="-mx-6 mt-6 border-gray-200" />
-          <div className="mt-4 flex items-center justify-between gap-3">
-            <ButtonWidget
-              label="CANCEL"
-              style="OUTLINE"
-              color="ACCENT"
-              onClick={() => setConfirmingReject(false)}
-            />
-            <ButtonWidget
-              label="REJECT RULE"
-              style="SOLID"
-              color="NEGATIVE"
-              disabled={busy}
-              onClick={async () => {
-                setConfirmingReject(false)
-                await handleDecision('reject')
-              }}
-            />
-          </div>
-        </DialogField>
-      )}
 
 
 
@@ -684,84 +680,11 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
           )
         })()}
 
-      {editingConditions && (
-        <EditConditionsDialog
-          initialName={nameInput}
-          initialActiveStatus={activeStatusInput}
-          initialContent={toContent(review)}
-          busy={busy}
-          onClose={() => setEditingConditions(false)}
-          onApply={handleApplyConditions}
-        />
-      )}
     </>,
   )
 }
 
-/** Modal that wraps EditConditionsForm with a local draft so changes are only committed on Apply. */
-function EditConditionsDialog({
-  initialName,
-  initialActiveStatus,
-  initialContent,
-  busy,
-  onClose,
-  onApply,
-}: {
-  initialName: string
-  initialActiveStatus: RuleActiveStatus
-  initialContent: RuleReviewContent
-  busy: boolean
-  onClose: () => void
-  onApply: (name: string, activeStatus: RuleActiveStatus, content: RuleReviewContent) => void
-}) {
-  const [name, setName] = useState(initialName)
-  const [activeStatus, setActiveStatus] = useState<RuleActiveStatus>(initialActiveStatus)
-  const [content, setContent] = useState<RuleReviewContent>(() => structuredClone(initialContent))
-
-  return (
-    <DialogField
-      open={true}
-      onOpenChange={open => {
-        if (!open) onClose()
-      }}
-      title="Edit conditions"
-      width="FIT"
-      height="EXTRA_TALL"
-      closeOnOutsideClick={false}
-      marginBelow="NONE"
-    >
-      <div className="dialog-size-60 flex h-full min-h-0 flex-col">
-        <div className="min-h-0 flex-1 overflow-y-auto pr-2">
-          <EditConditionsForm
-            name={name}
-            onNameChange={setName}
-            activeStatus={activeStatus}
-            onActiveStatusChange={setActiveStatus}
-            content={content}
-            onChange={setContent}
-          />
-        </div>
-        <div className="mt-4 flex shrink-0 items-center justify-between gap-3 border-t border-gray-200 pt-4">
-          <ButtonWidget
-            label="CANCEL"
-            style="OUTLINE"
-            color="ACCENT"
-            onClick={onClose}
-          />
-          <ButtonWidget
-            label="SAVE"
-            style="SOLID"
-            color="ACCENT"
-            disabled={busy}
-            onClick={() => onApply(name, activeStatus, content)}
-          />
-        </div>
-      </div>
-    </DialogField>
-  )
-}
-
-/** Review any rule. Accepted and Rejected rules open with the Change Decision top bar. */
+/** Review any rule, Pending or Approved. */
 export default function RuleReviewPage() {
   return <RuleReviewScreen pendingOnly={false} />
 }
