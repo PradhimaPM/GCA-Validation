@@ -39,17 +39,13 @@ const navPages = [
   { label: 'Rules', icon: Shuffle, isSelected: true },
 ]
 
-const statusChoices: RuleApprovalStatus[] = ['Accepted', 'Rejected', 'Pending']
+const reviewStatusChoices: RuleApprovalStatus[] = ['Accepted', 'Rejected', 'Pending']
+const activeStatusChoices: RuleActiveStatus[] = ['Active', 'Inactive']
 
 const statusTagColors: Record<RuleApprovalStatus, { background: string; text: string }> = {
   Accepted: { background: '#D7F3E0', text: '#166534' },
   Rejected: { background: '#FDE2E2', text: '#991B1B' },
   Pending: { background: '#DBEAFE', text: '#1E40AF' },
-}
-
-const activeStatusTagColors: Record<RuleActiveStatus, { background: string; text: string }> = {
-  Active: { background: '#D7F3E0', text: '#166534' },
-  Inactive: { background: '#E5E7EB', text: '#374151' },
 }
 
 export default function RulesReview() {
@@ -58,7 +54,8 @@ export default function RulesReview() {
   const [loading, setLoading] = useState(true)
   const [searchInput, setSearchInput] = useState('')
   const [appliedSearch, setAppliedSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<string | null>(null)
+  const [reviewStatusFilter, setReviewStatusFilter] = useState<string | null>(null)
+  const [activeStatusFilter, setActiveStatusFilter] = useState<string | null>(null)
   const [confirmingExport, setConfirmingExport] = useState(false)
 
   useEffect(() => {
@@ -72,15 +69,19 @@ export default function RulesReview() {
     const term = appliedSearch.trim().toLowerCase()
     return rules.filter(rule => {
       const matchesSearch = term === '' || rule.name.toLowerCase().includes(term)
-      const matchesStatus = statusFilter === null || rule.status === statusFilter
-      return matchesSearch && matchesStatus
+      const matchesReviewStatus =
+        reviewStatusFilter === null || rule.status === reviewStatusFilter
+      const matchesActiveStatus =
+        activeStatusFilter === null || rule.activeStatus === activeStatusFilter
+      return matchesSearch && matchesReviewStatus && matchesActiveStatus
     })
-  }, [rules, appliedSearch, statusFilter])
+  }, [rules, appliedSearch, reviewStatusFilter, activeStatusFilter])
 
   const handleRefresh = async () => {
     setSearchInput('')
     setAppliedSearch('')
-    setStatusFilter(null)
+    setReviewStatusFilter(null)
+    setActiveStatusFilter(null)
     // The data layer returns the same array each time, so copy it to trigger a re-render.
     setRules([...(await getRuleApprovals())])
   }
@@ -153,15 +154,28 @@ export default function RulesReview() {
                 onClick={() => setAppliedSearch(searchInput)}
               />
 
-              <div className="w-60 shrink-0">
+              <div className="w-64 shrink-0">
+                <DropdownField
+                  label="REVIEW STATUS"
+                  labelPosition="ADJACENT"
+                  placeholder="Any"
+                  choiceLabels={reviewStatusChoices}
+                  choiceValues={reviewStatusChoices}
+                  value={reviewStatusFilter}
+                  saveInto={value => setReviewStatusFilter(value ?? null)}
+                  marginBelow="NONE"
+                />
+              </div>
+
+              <div className="w-56 shrink-0">
                 <DropdownField
                   label="STATUS"
                   labelPosition="ADJACENT"
                   placeholder="Any"
-                  choiceLabels={statusChoices}
-                  choiceValues={statusChoices}
-                  value={statusFilter}
-                  saveInto={value => setStatusFilter(value ?? null)}
+                  choiceLabels={activeStatusChoices}
+                  choiceValues={activeStatusChoices}
+                  value={activeStatusFilter}
+                  saveInto={value => setActiveStatusFilter(value ?? null)}
                   marginBelow="NONE"
                 />
               </div>
@@ -213,7 +227,8 @@ export default function RulesReview() {
               <GridColumn
                 label="Review Status"
                 sortField="status"
-                width="NARROW"
+                width="MEDIUM"
+                align="START"
                 value={(row: RuleApproval) => (
                   <TagField
                     size="SMALL"
@@ -232,19 +247,8 @@ export default function RulesReview() {
                 label="Status"
                 sortField="activeStatus"
                 width="NARROW"
-                value={(row: RuleApproval) => (
-                  <TagField
-                    size="SMALL"
-                    tags={[
-                      {
-                        text: row.activeStatus,
-                        backgroundColor: activeStatusTagColors[row.activeStatus].background,
-                        textColor: activeStatusTagColors[row.activeStatus].text,
-                      },
-                    ]}
-                    marginBelow="NONE"
-                  />
-                )}
+                align="START"
+                value="activeStatus"
               />
               <GridColumn
                 label="Conditions"
@@ -255,14 +259,14 @@ export default function RulesReview() {
               <GridColumn
                 label="Included Clauses"
                 sortField="includedClauses"
-                width="NARROW"
+                width="MEDIUM"
                 align="START"
                 value="includedClauses"
               />
               <GridColumn
                 label="Excluded Clauses"
                 sortField="excludedClauses"
-                width="NARROW"
+                width="MEDIUM"
                 align="START"
                 value="excludedClauses"
               />
