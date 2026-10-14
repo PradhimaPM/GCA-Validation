@@ -21,6 +21,7 @@ import {
   Shuffle,
   ChevronDown,
   ChevronUp,
+  Sparkles,
 } from 'lucide-react'
 import {
   ConditionsEditor,
@@ -178,6 +179,7 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
   const [conditionsMode, setConditionsMode] = useState<EditConditionsMode>('PREVIEW')
+  const [viewingAiSummary, setViewingAiSummary] = useState(false)
   const [selectedClauseId, setSelectedClauseId] = useState<number | null>(null)
   const [viewingClauseId, setViewingClauseId] = useState<number | null>(null)
   const [nameInput, setNameInput] = useState('')
@@ -460,7 +462,7 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
                   <p className="text-xs text-gray-600">
                     {conditionsMode === 'EDIT'
                       ? "Ensure multiple conditions of the same clause data type aren't pointing to multiple different values"
-                      : `Clause set data that triggers this rule · ${pluralize(conditionTotal, 'condition')} · ${pluralize(review.groups.length, 'group')}`}
+                      : `${pluralize(conditionTotal, 'condition')} · ${pluralize(review.groups.length, 'group')}`}
                   </p>
                 </div>
                 <div className="shrink-0 inline-flex items-center gap-1 rounded-md bg-gray-100 p-1">
@@ -483,6 +485,21 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
                     onClick={() => setConditionsMode('PREVIEW')}
                   />
                 </div>
+              </div>
+
+              {/* AI generation banner — links to a summary of how this rule was built by AI. */}
+              <div className="mb-4 flex items-center gap-2 rounded-md border border-indigo-100 bg-indigo-50 px-4 py-2 text-sm text-gray-700">
+                <Sparkles size={16} aria-hidden="true" className="shrink-0 text-indigo-600" />
+                <p className="min-w-0">
+                  Generated with AI Rule Builder. Refer to AI Summary for details.{' '}
+                  <button
+                    type="button"
+                    onClick={() => setViewingAiSummary(true)}
+                    className="font-semibold text-indigo-700 hover:underline focus:outline-none focus-visible:underline"
+                  >
+                    View AI Generation Summary.
+                  </button>
+                </p>
               </div>
 
               {conditionsMode === 'EDIT' ? (
@@ -682,6 +699,66 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
             </DialogField>
           )
         })()}
+
+      {viewingAiSummary && (
+        <DialogField
+          open={true}
+          onOpenChange={open => {
+            if (!open) setViewingAiSummary(false)
+          }}
+          title="AI Generation Summary"
+          width="MEDIUM"
+          height="FIT"
+          marginBelow="NONE"
+        >
+          <div className="flex flex-col gap-4 text-sm text-gray-700">
+            <div className="flex items-start gap-2 rounded-md border border-indigo-100 bg-indigo-50 px-4 py-3">
+              <Sparkles size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-indigo-600" />
+              <p className="min-w-0">
+                This rule was drafted by the AI Rule Builder using the source document and your
+                answers to the acquisition questionnaire.
+              </p>
+            </div>
+            <section>
+              <p className="mb-1 font-semibold text-gray-900">Source</p>
+              <p>
+                FAR 1.102-3(b) &mdash; Acquisition 360 Voluntary Survey, extracted from the uploaded
+                FAR text.
+              </p>
+            </section>
+            <section>
+              <p className="mb-1 font-semibold text-gray-900">Why these conditions</p>
+              <ul className="list-disc space-y-1 pl-5">
+                <li>
+                  <span className="font-medium">Clause Set Type</span> values pulled from the three
+                  acquisition phases the clause applies to (Solicitation, Award, Modification).
+                </li>
+                <li>
+                  <span className="font-medium">Contract Category</span> conditions filter out
+                  Construction and bound the dollar range so the rule only triggers on in-scope
+                  contracts.
+                </li>
+              </ul>
+            </section>
+            <section>
+              <p className="mb-1 font-semibold text-gray-900">Reviewer tips</p>
+              <ul className="list-disc space-y-1 pl-5">
+                <li>Confirm the dollar thresholds against your agency&apos;s current guidance.</li>
+                <li>Switch to Edit above to adjust any condition before approving.</li>
+              </ul>
+            </section>
+          </div>
+          <hr className="-mx-6 mt-6 border-gray-200" />
+          <div className="mt-4 flex items-center justify-end gap-3">
+            <ButtonWidget
+              label="Close"
+              style="OUTLINE"
+              color="ACCENT"
+              onClick={() => setViewingAiSummary(false)}
+            />
+          </div>
+        </DialogField>
+      )}
 
     </>,
   )
