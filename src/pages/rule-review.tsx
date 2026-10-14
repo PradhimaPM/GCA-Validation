@@ -424,8 +424,11 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
               <TextField
                 label="Name"
                 required={true}
-                readOnly={true}
-                value={nameInput || rule.name}
+                value={nameInput}
+                saveInto={value => {
+                  setNameInput(value)
+                  setDirty(true)
+                }}
                 marginBelow="NONE"
               />
               <RadioButtonField
