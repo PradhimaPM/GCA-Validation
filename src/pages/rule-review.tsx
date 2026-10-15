@@ -729,9 +729,31 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
 
             {/* Scrollable body */}
             <div className="mt-4 min-h-0 flex-1 overflow-y-auto pr-2">
-              {/* Input section — intentionally left blank for now. */}
+              {/* Input section — prescription text from each included clause. */}
               <section className="mb-6">
                 <h3 className="mb-2 text-base font-semibold text-gray-900">Input</h3>
+                {includedClauses.length === 0 ? (
+                  <p className="text-sm text-gray-700">
+                    No prescription text available.
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {includedClauses.map(clause => (
+                      <div
+                        key={clause.id}
+                        className="rounded-md border border-gray-200 bg-white px-4 py-3"
+                      >
+                        <p className="mb-2 text-sm">
+                          <span className="mr-2 font-semibold text-gray-900">{clause.number}</span>
+                          <span className="text-gray-700">{clause.title}</span>
+                        </p>
+                        <div className="text-sm leading-relaxed text-gray-800">
+                          <TextBlock text={clause.prescription} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </section>
 
               {/* Output section */}
