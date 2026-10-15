@@ -729,19 +729,9 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
 
             {/* Scrollable body */}
             <div className="mt-4 min-h-0 flex-1 overflow-y-auto pr-2">
-              {/* Input section */}
+              {/* Input section — intentionally left blank for now. */}
               <section className="mb-6">
                 <h3 className="mb-2 text-base font-semibold text-gray-900">Input</h3>
-                <div className="space-y-2 text-sm text-gray-700">
-                  <p>
-                    <span className="font-medium text-gray-900">Source document:</span>{' '}
-                    FAR 1.102-3(b) &mdash; Acquisition 360 Voluntary Survey.
-                  </p>
-                  <p>
-                    <span className="font-medium text-gray-900">Acquisition profile:</span>{' '}
-                    Firm Fixed Price, 13&ndash;36 months, Trade Agreements Act applies.
-                  </p>
-                </div>
               </section>
 
               {/* Output section */}
