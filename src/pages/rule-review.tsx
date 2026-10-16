@@ -551,7 +551,7 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
           {selectedClause ? (
             <div className="space-y-4">
               <HeadingField
-                text={`${selectedClause.number} ${selectedClause.title}`}
+                text="Prescription Text"
                 size="MEDIUM"
                 headingTag="H2"
                 fontWeight="SEMI_BOLD"
@@ -559,16 +559,15 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
               />
 
               <div className="rounded-md border border-gray-200 bg-white px-4 py-3">
-                <p className="text-sm font-semibold text-gray-900">Prescription Text</p>
-                <div className="mt-3 border-t border-gray-200 pt-3">
-                  <p className="mb-2 text-base">
-                    <span className="mr-2 text-sm font-semibold text-gray-700">
-                      {selectedClause.number}
-                    </span>
-                    <span className="text-lg font-semibold text-gray-900">
-                      {selectedClause.title}
-                    </span>
-                  </p>
+                <p className="mb-2 text-base">
+                  <span className="mr-2 text-sm font-semibold text-gray-700">
+                    {selectedClause.number}
+                  </span>
+                  <span className="text-lg font-semibold text-gray-900">
+                    {selectedClause.title}
+                  </span>
+                </p>
+                <div className="border-t border-gray-200 pt-3">
                   <TextBlock text={selectedClause.prescription} />
                 </div>
               </div>
