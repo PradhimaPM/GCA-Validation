@@ -27,7 +27,7 @@ export interface Rule {
   modifiedBy: string
 }
 
-const rules: Rule[] = [
+const rawRules: Rule[] = [
   {
     id: 1,
     name: 'pktestrule2',
@@ -770,6 +770,14 @@ const rules: Rule[] = [
     modifiedBy: 'david.kim',
   },
 ]
+
+// Each rule has either included or excluded clauses, not both.
+// Keep the larger of the two counts; ties favor Included.
+const rules: Rule[] = rawRules.map(rule =>
+  rule.includedClauses >= rule.excludedClauses
+    ? { ...rule, excludedClauses: 0 }
+    : { ...rule, includedClauses: 0 },
+)
 
 export async function getRules(): Promise<Rule[]> {
   return rules

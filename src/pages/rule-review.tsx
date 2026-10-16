@@ -19,8 +19,6 @@ import {
   Layers,
   CircleHelp,
   Shuffle,
-  ChevronDown,
-  ChevronUp,
   Sparkles,
   ArrowLeft,
   Info,
@@ -113,40 +111,6 @@ function ConditionStack({ conditions, join }: { conditions: RuleCondition[]; joi
           <ConditionRow condition={condition} />
         </div>
       ))}
-    </div>
-  )
-}
-
-/**
- * A clause-detail card the reviewer can collapse. Both cards on the right pane
- * start collapsed so the pane stays short, and either one opens on click.
- */
-function CollapsibleCard({
-  title,
-  children,
-  defaultOpen = false,
-}: {
-  title: string
-  children: ReactNode
-  defaultOpen?: boolean
-}) {
-  const [open, setOpen] = useState(defaultOpen)
-  return (
-    <div className="rounded-md border border-gray-200 bg-white">
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={() => setOpen(prev => !prev)}
-        className="flex w-full items-center justify-between gap-3 rounded-md px-4 py-3 text-left hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-      >
-        <span className="text-sm font-semibold text-gray-900">{title}</span>
-        {open ? (
-          <ChevronUp size={16} aria-hidden="true" className="text-gray-600" />
-        ) : (
-          <ChevronDown size={16} aria-hidden="true" className="text-gray-600" />
-        )}
-      </button>
-      {open && <div className="border-t border-gray-200 px-4 py-3">{children}</div>}
     </div>
   )
 }
@@ -593,21 +557,6 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
                 fontWeight="SEMI_BOLD"
                 marginBelow="NONE"
               />
-
-              <CollapsibleCard
-                key={`${selectedClause.id}-clauses`}
-                title={`Clauses Involved (${includedClauses.length})`}
-                defaultOpen={false}
-              >
-                <ul className="list-disc space-y-1.5 pl-5 text-sm text-gray-800">
-                  {includedClauses.map(clause => (
-                    <li key={clause.id}>
-                      <span className="font-medium">{clause.number}</span>
-                      <span className="text-gray-600"> | {clause.title}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CollapsibleCard>
 
               <div className="rounded-md border border-gray-200 bg-white px-4 py-3">
                 <p className="text-sm font-semibold text-gray-900">Prescription Text</p>
