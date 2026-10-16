@@ -518,7 +518,7 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
             <div key={group.label} className="mt-6 overflow-hidden rounded-md border border-gray-200 bg-white">
               <div className="px-5 py-4">
                 <HeadingField
-                  text={`${group.label} (${group.items.length})`}
+                  text={group.label}
                   size="MEDIUM_PLUS"
                   headingTag="H3"
                   fontWeight="SEMI_BOLD"
