@@ -718,7 +718,6 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
             label="Cancel"
             style="OUTLINE"
             color="ACCENT"
-            disabled={busy}
             onClick={goToList}
           />
         </div>
