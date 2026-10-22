@@ -95,6 +95,18 @@ export interface RuleReview {
   clauses: ReviewClause[]
   /** ISO 8601 timestamp of the last "Save draft", or null if none. */
   draftSavedAt: string | null
+  /**
+   * Immutable snapshot of what the AI first produced for this rule. Captured
+   * once when the review is built and preserved across all subsequent updates
+   * so the AI Generation Summary can always show the original output,
+   * regardless of what the reviewer edits.
+   */
+  aiOriginal: {
+    join: ConditionJoin
+    conditions: RuleCondition[]
+    groups: ConditionGroup[]
+    clauses: ReviewClause[]
+  }
 }
 
 /** The editable parts of a review, used when saving a draft or accepting. */
@@ -511,14 +523,21 @@ function buildFeaturedReview(rule: RuleApproval): RuleReview {
     },
   ]
 
+  const clauses = buildClauses(rule)
   return {
     id: rule.id,
     ruleId: rule.id,
     join: 'AND',
     conditions: [],
     groups,
-    clauses: buildClauses(rule),
+    clauses,
     draftSavedAt: null,
+    aiOriginal: {
+      join: 'AND',
+      conditions: [],
+      groups: structuredClone(groups),
+      clauses: structuredClone(clauses),
+    },
   }
 }
 
@@ -545,14 +564,21 @@ function buildReview(rule: RuleApproval): RuleReview {
     }
   }
 
+  const clauses = buildClauses(rule)
   return {
     id: rule.id,
     ruleId: rule.id,
     join: 'AND',
     conditions,
     groups,
-    clauses: buildClauses(rule),
+    clauses,
     draftSavedAt: null,
+    aiOriginal: {
+      join: 'AND',
+      conditions: structuredClone(conditions),
+      groups: structuredClone(groups),
+      clauses: structuredClone(clauses),
+    },
   }
 }
 
@@ -580,7 +606,15 @@ export async function updateRuleReview(
 ): Promise<RuleReview | undefined> {
   const existing = await getRuleReview(ruleId)
   if (!existing) return undefined
-  const updated = { ...existing, ...data, id: existing.id, ruleId: existing.ruleId }
+  // aiOriginal is immutable — ignore any attempt to overwrite it.
+  const { aiOriginal: _ignored, ...safe } = data
+  const updated = {
+    ...existing,
+    ...safe,
+    id: existing.id,
+    ruleId: existing.ruleId,
+    aiOriginal: existing.aiOriginal,
+  }
   reviews.set(ruleId, updated)
   return updated
 }

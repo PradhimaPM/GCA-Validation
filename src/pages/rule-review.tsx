@@ -144,10 +144,6 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
   const [done, setDone] = useState(false)
   const [conditionsMode, setConditionsMode] = useState<EditConditionsMode>('PREVIEW')
   const [viewingAiSummary, setViewingAiSummary] = useState(false)
-  // Frozen copy of the review as the AI first produced it. Captured once on load
-  // and never updated so the AI Generation Summary dialog can show the original
-  // output even after the reviewer edits the live rule.
-  const [aiSnapshot, setAiSnapshot] = useState<RuleReview | null>(null)
   const [selectedClauseId, setSelectedClauseId] = useState<number | null>(null)
   const [viewingClauseId, setViewingClauseId] = useState<number | null>(null)
   const [nameInput, setNameInput] = useState('')
@@ -169,8 +165,6 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
       // Work on a copy so unsaved edits never leak into the data layer.
       const copy = structuredClone(stored)
       setReview(copy)
-      // Snapshot the AI output exactly as it was loaded. Never mutate this.
-      setAiSnapshot(structuredClone(stored))
       setDirty(false)
       const foundRule = rules.find(r => r.id === ruleId)
       if (foundRule) {
@@ -191,12 +185,13 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
 
   const includedClauses = review?.clauses.filter(c => c.outcome === 'Included') ?? []
   const excludedClauses = review?.clauses.filter(c => c.outcome === 'Excluded') ?? []
-  // AI Generation Summary reads from the frozen snapshot so reviewer edits
-  // never bleed into what the AI originally produced.
+  // AI Generation Summary reads from review.aiOriginal — an immutable snapshot
+  // the data layer captured when the review was first built. Reviewer edits
+  // never affect what shows here.
   const aiIncludedClauses =
-    aiSnapshot?.clauses.filter(c => c.outcome === 'Included') ?? []
+    review?.aiOriginal.clauses.filter(c => c.outcome === 'Included') ?? []
   const aiExcludedClauses =
-    aiSnapshot?.clauses.filter(c => c.outcome === 'Excluded') ?? []
+    review?.aiOriginal.clauses.filter(c => c.outcome === 'Excluded') ?? []
   const selectedClause = review?.clauses.find(c => c.id === selectedClauseId) ?? null
 
   const conditionTotal = review ? countConditions(review) : 0
@@ -451,10 +446,10 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
                   <h3 className="mb-3 text-base font-semibold text-gray-900">Output</h3>
 
                   <p className="mb-2 text-sm font-medium text-gray-800">Rule Preview</p>
-                  <ConditionsPreview content={toContent(aiSnapshot ?? review)} />
+                  <ConditionsPreview content={review.aiOriginal} />
 
-                  {(aiSnapshot ?? review).conditions
-                    .concat((aiSnapshot ?? review).groups.flatMap(g => g.conditions))
+                  {review.aiOriginal.conditions
+                    .concat(review.aiOriginal.groups.flatMap(g => g.conditions))
                     .some(c => !clauseDataTypes.includes(c.clauseData)) && (
                     <div className="mt-3 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-900">
                       <AlertTriangle
