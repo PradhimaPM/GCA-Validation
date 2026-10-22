@@ -30,7 +30,7 @@ import {
   getReviewQueue,
   getRuleReview,
   approveRuleReview,
-  saveRuleReviewDraft,
+  pendRuleReview,
   countConditions,
   clauseDataTypes,
   type RuleReview,
@@ -223,12 +223,12 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
     setQueue(await getReviewQueue())
   }
 
-  /** Persist edits without changing the rule's status. */
+  /** Persist edits and set the rule's status to Pending (needs re-review). */
   const handleSave = async () => {
     if (!review) return
     setBusy(true)
     await persistHeaderIfChanged()
-    await saveRuleReviewDraft(ruleId, toContent(review))
+    await pendRuleReview(ruleId, toContent(review))
     setDirty(false)
     setBusy(false)
     setLocation('/rules-review')
@@ -727,14 +727,14 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
             label="Save"
             style="OUTLINE"
             color="ACCENT"
-            disabled={busy}
+            disabled={busy || (rule.status === 'Approved' && !dirty)}
             onClick={handleSave}
           />
           <ButtonWidget
             label="Save and Approve"
             style="SOLID"
             color="ACCENT"
-            disabled={busy}
+            disabled={busy || (rule.status === 'Approved' && !dirty)}
             onClick={handleSaveAndApprove}
           />
         </div>

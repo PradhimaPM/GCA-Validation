@@ -621,6 +621,14 @@ export async function approveRuleReview(
   return decideRuleReview(ruleId, content, 'Approved')
 }
 
+/** Saves edits and sets the rule's status back to Pending. */
+export async function pendRuleReview(
+  ruleId: number,
+  content: RuleReviewContent,
+): Promise<RuleReview | undefined> {
+  return decideRuleReview(ruleId, content, 'Pending')
+}
+
 
 
 export function countConditions(review: Pick<RuleReviewContent, 'conditions' | 'groups'>): number {
