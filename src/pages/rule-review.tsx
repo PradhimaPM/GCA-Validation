@@ -144,6 +144,10 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
   const [done, setDone] = useState(false)
   const [conditionsMode, setConditionsMode] = useState<EditConditionsMode>('PREVIEW')
   const [viewingAiSummary, setViewingAiSummary] = useState(false)
+  // Frozen copy of the review as the AI first produced it. Captured once on load
+  // and never updated so the AI Generation Summary dialog can show the original
+  // output even after the reviewer edits the live rule.
+  const [aiSnapshot, setAiSnapshot] = useState<RuleReview | null>(null)
   const [selectedClauseId, setSelectedClauseId] = useState<number | null>(null)
   const [viewingClauseId, setViewingClauseId] = useState<number | null>(null)
   const [nameInput, setNameInput] = useState('')
@@ -165,6 +169,8 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
       // Work on a copy so unsaved edits never leak into the data layer.
       const copy = structuredClone(stored)
       setReview(copy)
+      // Snapshot the AI output exactly as it was loaded. Never mutate this.
+      setAiSnapshot(structuredClone(stored))
       setDirty(false)
       const foundRule = rules.find(r => r.id === ruleId)
       if (foundRule) {
@@ -185,6 +191,12 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
 
   const includedClauses = review?.clauses.filter(c => c.outcome === 'Included') ?? []
   const excludedClauses = review?.clauses.filter(c => c.outcome === 'Excluded') ?? []
+  // AI Generation Summary reads from the frozen snapshot so reviewer edits
+  // never bleed into what the AI originally produced.
+  const aiIncludedClauses =
+    aiSnapshot?.clauses.filter(c => c.outcome === 'Included') ?? []
+  const aiExcludedClauses =
+    aiSnapshot?.clauses.filter(c => c.outcome === 'Excluded') ?? []
   const selectedClause = review?.clauses.find(c => c.id === selectedClauseId) ?? null
 
   const conditionTotal = review ? countConditions(review) : 0
@@ -407,16 +419,16 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
                   marginBelow="STANDARD"
                 />
 
-                {/* Input section — prescription text from each included clause. */}
+                {/* Input section — prescription text from each AI-included clause. */}
                 <section className="mb-6">
                   <h3 className="mb-2 text-base font-semibold text-gray-900">Input</h3>
-                  {includedClauses.length === 0 ? (
+                  {aiIncludedClauses.length === 0 ? (
                     <p className="text-sm text-gray-700">
                       No prescription text available.
                     </p>
                   ) : (
                     <div className="space-y-4">
-                      {includedClauses.map(clause => (
+                      {aiIncludedClauses.map(clause => (
                         <div
                           key={clause.id}
                           className="rounded-md border border-gray-200 bg-white px-4 py-3"
@@ -439,10 +451,10 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
                   <h3 className="mb-3 text-base font-semibold text-gray-900">Output</h3>
 
                   <p className="mb-2 text-sm font-medium text-gray-800">Rule Preview</p>
-                  <ConditionsPreview content={toContent(review)} />
+                  <ConditionsPreview content={toContent(aiSnapshot ?? review)} />
 
-                  {review.conditions
-                    .concat(review.groups.flatMap(g => g.conditions))
+                  {(aiSnapshot ?? review).conditions
+                    .concat((aiSnapshot ?? review).groups.flatMap(g => g.conditions))
                     .some(c => !clauseDataTypes.includes(c.clauseData)) && (
                     <div className="mt-3 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-900">
                       <AlertTriangle
@@ -460,17 +472,17 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
                   <div className="mt-5 flex items-center gap-2">
                     <p className="text-sm font-medium text-gray-800">Included Clauses</p>
                     <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-700">
-                      {includedClauses.length}
+                      {aiIncludedClauses.length}
                     </span>
                   </div>
-                  {includedClauses.length === 0 ? (
+                  {aiIncludedClauses.length === 0 ? (
                     <div className="mt-2 flex items-start gap-2 rounded-md border border-blue-100 bg-blue-50 px-4 py-2 text-xs text-blue-900">
                       <Info size={14} aria-hidden="true" className="mt-0.5 shrink-0 text-blue-600" />
                       <p>No clauses included.</p>
                     </div>
                   ) : (
                     <ul className="mt-2 divide-y divide-gray-100 rounded-md border border-gray-200">
-                      {includedClauses.map(clause => (
+                      {aiIncludedClauses.map(clause => (
                         <li key={clause.id} className="px-4 py-2 text-sm">
                           <span className="font-semibold text-gray-900">{clause.number}</span>
                           <span className="ml-2 text-gray-700">{clause.title}</span>
@@ -482,17 +494,17 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
                   <div className="mt-5 flex items-center gap-2">
                     <p className="text-sm font-medium text-gray-800">Excluded Clauses</p>
                     <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-700">
-                      {excludedClauses.length}
+                      {aiExcludedClauses.length}
                     </span>
                   </div>
-                  {excludedClauses.length === 0 ? (
+                  {aiExcludedClauses.length === 0 ? (
                     <div className="mt-2 flex items-start gap-2 rounded-md border border-blue-100 bg-blue-50 px-4 py-2 text-xs text-blue-900">
                       <Info size={14} aria-hidden="true" className="mt-0.5 shrink-0 text-blue-600" />
                       <p>No clauses excluded.</p>
                     </div>
                   ) : (
                     <ul className="mt-2 divide-y divide-gray-100 rounded-md border border-gray-200">
-                      {excludedClauses.map(clause => (
+                      {aiExcludedClauses.map(clause => (
                         <li key={clause.id} className="px-4 py-2 text-sm">
                           <span className="font-semibold text-gray-900">{clause.number}</span>
                           <span className="ml-2 text-gray-700">{clause.title}</span>
