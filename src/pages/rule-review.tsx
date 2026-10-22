@@ -14,13 +14,10 @@ import {
   RadioButtonField,
 } from '@pglevy/sailwind'
 import {
-  LayoutGrid,
   List,
-  Layers,
   CircleHelp,
   Shuffle,
   Sparkles,
-  ArrowLeft,
   Info,
   AlertTriangle,
 } from 'lucide-react'
@@ -50,9 +47,7 @@ import {
 } from '../db/rule-approvals'
 
 const navPages = [
-  { label: 'Clause Sets', icon: LayoutGrid },
   { label: 'Clauses', icon: List },
-  { label: 'Templates', icon: Layers },
   { label: 'Questionnaires', icon: CircleHelp },
   { label: 'Rules', icon: Shuffle, isSelected: true },
 ]
@@ -387,8 +382,129 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
 
       {/* Two panes, each scrolling on its own */}
       <div className="flex min-h-0 flex-1">
-        {/* Left pane: rule, conditions, included and excluded clauses */}
+        {/* Left pane: rule, conditions, included and excluded clauses — or the
+            AI generation summary when the user clicks the banner link. */}
         <section aria-label="Rule" className="min-w-0 flex-[3] overflow-y-auto px-8 py-6">
+          {viewingAiSummary ? (
+            <>
+              <div className="-ml-2 mb-2">
+                <ButtonWidget
+                  label="Back"
+                  style="GHOST"
+                  color="ACCENT"
+                  size="SMALL"
+                  icon="ArrowLeft"
+                  iconPosition="START"
+                  onClick={() => setViewingAiSummary(false)}
+                />
+              </div>
+              <div className="rounded-md border border-gray-200 bg-white px-6 py-5">
+                <HeadingField
+                  text="AI Generation Summary"
+                  size="MEDIUM_PLUS"
+                  headingTag="H2"
+                  fontWeight="SEMI_BOLD"
+                  marginBelow="STANDARD"
+                />
+
+                {/* Input section — prescription text from each included clause. */}
+                <section className="mb-6">
+                  <h3 className="mb-2 text-base font-semibold text-gray-900">Input</h3>
+                  {includedClauses.length === 0 ? (
+                    <p className="text-sm text-gray-700">
+                      No prescription text available.
+                    </p>
+                  ) : (
+                    <div className="space-y-4">
+                      {includedClauses.map(clause => (
+                        <div
+                          key={clause.id}
+                          className="rounded-md border border-gray-200 bg-white px-4 py-3"
+                        >
+                          <p className="mb-2 text-sm">
+                            <span className="mr-2 font-semibold text-gray-900">{clause.number}</span>
+                            <span className="text-gray-700">{clause.title}</span>
+                          </p>
+                          <div className="text-sm leading-relaxed text-gray-800">
+                            <TextBlock text={clause.prescription} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
+
+                {/* Output section */}
+                <section>
+                  <h3 className="mb-3 text-base font-semibold text-gray-900">Output</h3>
+
+                  <p className="mb-2 text-sm font-medium text-gray-800">Rule Preview</p>
+                  <ConditionsPreview content={toContent(review)} />
+
+                  {review.conditions
+                    .concat(review.groups.flatMap(g => g.conditions))
+                    .some(c => !clauseDataTypes.includes(c.clauseData)) && (
+                    <div className="mt-3 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-900">
+                      <AlertTriangle
+                        size={14}
+                        aria-hidden="true"
+                        className="mt-0.5 shrink-0 text-amber-600"
+                      />
+                      <p>
+                        One or more conditions use a clause data type that isn&apos;t in the system&apos;s
+                        predefined list. Edit the rule to replace or remove them before approving.
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="mt-5 flex items-center gap-2">
+                    <p className="text-sm font-medium text-gray-800">Included Clauses</p>
+                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-700">
+                      {includedClauses.length}
+                    </span>
+                  </div>
+                  {includedClauses.length === 0 ? (
+                    <div className="mt-2 flex items-start gap-2 rounded-md border border-blue-100 bg-blue-50 px-4 py-2 text-xs text-blue-900">
+                      <Info size={14} aria-hidden="true" className="mt-0.5 shrink-0 text-blue-600" />
+                      <p>No clauses included.</p>
+                    </div>
+                  ) : (
+                    <ul className="mt-2 divide-y divide-gray-100 rounded-md border border-gray-200">
+                      {includedClauses.map(clause => (
+                        <li key={clause.id} className="px-4 py-2 text-sm">
+                          <span className="font-semibold text-gray-900">{clause.number}</span>
+                          <span className="ml-2 text-gray-700">{clause.title}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  <div className="mt-5 flex items-center gap-2">
+                    <p className="text-sm font-medium text-gray-800">Excluded Clauses</p>
+                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-700">
+                      {excludedClauses.length}
+                    </span>
+                  </div>
+                  {excludedClauses.length === 0 ? (
+                    <div className="mt-2 flex items-start gap-2 rounded-md border border-blue-100 bg-blue-50 px-4 py-2 text-xs text-blue-900">
+                      <Info size={14} aria-hidden="true" className="mt-0.5 shrink-0 text-blue-600" />
+                      <p>No clauses excluded.</p>
+                    </div>
+                  ) : (
+                    <ul className="mt-2 divide-y divide-gray-100 rounded-md border border-gray-200">
+                      {excludedClauses.map(clause => (
+                        <li key={clause.id} className="px-4 py-2 text-sm">
+                          <span className="font-semibold text-gray-900">{clause.number}</span>
+                          <span className="ml-2 text-gray-700">{clause.title}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
+              </div>
+            </>
+          ) : (
+            <>
           <div className="rounded-md border border-gray-200 bg-white">
             {/* Rule header row: Name (read-only) on the left, Status (always editable) on the right. */}
             <div className="grid grid-cols-1 gap-x-6 gap-y-4 border-b border-gray-200 px-5 py-4 md:grid-cols-[2fr_1fr] md:items-start">
@@ -527,9 +643,12 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
               </div>
               <div className="border-t border-gray-200">
                 {group.items.length === 0 && (
-                  <p className="px-5 py-4 text-sm text-gray-600">
-                    No {group.label.toLowerCase()} in this rule.
-                  </p>
+                  <div className="m-3 flex items-start gap-2 rounded-md border border-blue-100 bg-blue-50 px-4 py-2 text-xs text-blue-900">
+                    <Info size={14} aria-hidden="true" className="mt-0.5 shrink-0 text-blue-600" />
+                    <p>
+                      No clauses {group.label === 'Included Clauses' ? 'included' : 'excluded'}.
+                    </p>
+                  </div>
                 )}
                 {group.items.map(clause => (
                   <ClauseRow
@@ -541,6 +660,8 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
               </div>
             </div>
           ))}
+            </>
+          )}
         </section>
 
         {/* Right pane: the selected clause */}
@@ -619,8 +740,6 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
         </div>
       </div>
 
-
-
       {viewingClauseId !== null &&
         (() => {
           const clause = review.clauses.find(c => c.id === viewingClauseId)
@@ -652,142 +771,6 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
             </DialogField>
           )
         })()}
-
-      {viewingAiSummary && (
-        <DialogField
-          open={true}
-          onOpenChange={open => {
-            if (!open) setViewingAiSummary(false)
-          }}
-          title="AI Generation Summary"
-          width="FIT"
-          height="EXTRA_TALL"
-          marginBelow="NONE"
-        >
-          <div className="dialog-size-60 flex h-full min-h-0 flex-col">
-            {/* Back to Edit shortcut dismisses the dialog — the Edit view sits behind it. */}
-            <button
-              type="button"
-              onClick={() => setViewingAiSummary(false)}
-              className="inline-flex items-center gap-1 self-start text-sm font-semibold text-blue-700 hover:underline focus:outline-none focus-visible:underline"
-            >
-              <ArrowLeft size={14} aria-hidden="true" />
-              Back To Edit
-            </button>
-
-            {/* Scrollable body */}
-            <div className="mt-4 min-h-0 flex-1 overflow-y-auto pr-2">
-              {/* Input section — prescription text from each included clause. */}
-              <section className="mb-6">
-                <h3 className="mb-2 text-base font-semibold text-gray-900">Input</h3>
-                {includedClauses.length === 0 ? (
-                  <p className="text-sm text-gray-700">
-                    No prescription text available.
-                  </p>
-                ) : (
-                  <div className="space-y-4">
-                    {includedClauses.map(clause => (
-                      <div
-                        key={clause.id}
-                        className="rounded-md border border-gray-200 bg-white px-4 py-3"
-                      >
-                        <p className="mb-2 text-sm">
-                          <span className="mr-2 font-semibold text-gray-900">{clause.number}</span>
-                          <span className="text-gray-700">{clause.title}</span>
-                        </p>
-                        <div className="text-sm leading-relaxed text-gray-800">
-                          <TextBlock text={clause.prescription} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </section>
-
-              {/* Output section */}
-              <section>
-                <h3 className="mb-3 text-base font-semibold text-gray-900">Output</h3>
-
-                <p className="mb-2 text-sm font-medium text-gray-800">Rule Preview</p>
-                <ConditionsPreview content={toContent(review)} />
-
-                {/* Example warning the AI surfaces when it drafts a condition against an
-                    unrecognized clause data type. Rendered conditionally when such a
-                    condition exists so the layout still works for clean rules. */}
-                {review.conditions
-                  .concat(review.groups.flatMap(g => g.conditions))
-                  .some(c => !clauseDataTypes.includes(c.clauseData)) && (
-                  <div className="mt-3 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-900">
-                    <AlertTriangle
-                      size={14}
-                      aria-hidden="true"
-                      className="mt-0.5 shrink-0 text-amber-600"
-                    />
-                    <p>
-                      One or more conditions use a clause data type that isn&apos;t in the system&apos;s
-                      predefined list. Edit the rule to replace or remove them before approving.
-                    </p>
-                  </div>
-                )}
-
-                <div className="mt-5 flex items-center gap-2">
-                  <p className="text-sm font-medium text-gray-800">Included Clauses</p>
-                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-700">
-                    {includedClauses.length}
-                  </span>
-                </div>
-                {includedClauses.length === 0 ? (
-                  <div className="mt-2 flex items-start gap-2 rounded-md border border-blue-100 bg-blue-50 px-4 py-2 text-xs text-blue-900">
-                    <Info size={14} aria-hidden="true" className="mt-0.5 shrink-0 text-blue-600" />
-                    <p>No clauses included.</p>
-                  </div>
-                ) : (
-                  <ul className="mt-2 divide-y divide-gray-100 rounded-md border border-gray-200">
-                    {includedClauses.map(clause => (
-                      <li key={clause.id} className="px-4 py-2 text-sm">
-                        <span className="font-semibold text-gray-900">{clause.number}</span>
-                        <span className="ml-2 text-gray-700">{clause.title}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-
-                <div className="mt-5 flex items-center gap-2">
-                  <p className="text-sm font-medium text-gray-800">Excluded Clauses</p>
-                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-700">
-                    {excludedClauses.length}
-                  </span>
-                </div>
-                {excludedClauses.length === 0 ? (
-                  <div className="mt-2 flex items-start gap-2 rounded-md border border-blue-100 bg-blue-50 px-4 py-2 text-xs text-blue-900">
-                    <Info size={14} aria-hidden="true" className="mt-0.5 shrink-0 text-blue-600" />
-                    <p>No clauses excluded.</p>
-                  </div>
-                ) : (
-                  <ul className="mt-2 divide-y divide-gray-100 rounded-md border border-gray-200">
-                    {excludedClauses.map(clause => (
-                      <li key={clause.id} className="px-4 py-2 text-sm">
-                        <span className="font-semibold text-gray-900">{clause.number}</span>
-                        <span className="ml-2 text-gray-700">{clause.title}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </section>
-            </div>
-
-            {/* Footer with Close on the left, matching the screenshot */}
-            <div className="mt-4 flex shrink-0 justify-start border-t border-gray-200 pt-4">
-              <ButtonWidget
-                label="CLOSE"
-                style="OUTLINE"
-                color="ACCENT"
-                onClick={() => setViewingAiSummary(false)}
-              />
-            </div>
-          </div>
-        </DialogField>
-      )}
 
     </>,
   )

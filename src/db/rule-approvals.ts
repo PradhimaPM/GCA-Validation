@@ -44,19 +44,9 @@ const statusCycle: RuleApprovalStatus[] = [
   'Pending',
 ]
 
-// Mix of Active/Inactive, independent of review status, so the grid shows both.
-const activeStatusCycle: RuleActiveStatus[] = [
-  'Active',
-  'Active',
-  'Inactive',
-  'Active',
-  'Inactive',
-  'Active',
-  'Active',
-  'Inactive',
-  'Active',
-  'Inactive',
-]
+// All rules are Active by default; only these specific IDs are shown as Inactive
+// so the grid has at most two Inactive rows on the first page.
+const inactiveRuleIds = new Set<number>([3, 7])
 
 let ruleApprovals: RuleApproval[] | null = null
 
@@ -67,7 +57,7 @@ async function load(): Promise<RuleApproval[]> {
       id: rule.id,
       name: rule.name,
       status: statusCycle[index % statusCycle.length],
-      activeStatus: activeStatusCycle[index % activeStatusCycle.length],
+      activeStatus: inactiveRuleIds.has(rule.id) ? 'Inactive' : 'Active',
       conditions: rule.conditions,
       conditionGroups: rule.conditionGroups,
       includedClauses: rule.includedClauses,

@@ -15,9 +15,7 @@ import {
   DialogField,
 } from '@pglevy/sailwind'
 import {
-  LayoutGrid,
   List,
-  Layers,
   CircleHelp,
   Shuffle,
   Pencil,
@@ -32,9 +30,7 @@ import {
 import { formatRuleTimestamp } from '../db/rules'
 
 const navPages = [
-  { label: 'Clause Sets', icon: LayoutGrid },
   { label: 'Clauses', icon: List },
-  { label: 'Templates', icon: Layers },
   { label: 'Questionnaires', icon: CircleHelp },
   { label: 'Rules', icon: Shuffle, isSelected: true },
 ]
