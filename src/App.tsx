@@ -19,6 +19,10 @@ import QuestionsLanding from './pages/questions-landing'
 import Questions from './pages/questions'
 import QuestionsReview from './pages/questions-review'
 import ClauseHistory from './pages/clause-history'
+import Library from './pages/library'
+import LibraryImport from './pages/library-import'
+import LibraryImportConfirm from './pages/library-import-confirm'
+import LibraryImportSummary from './pages/library-import-summary'
 
 const pages = [
   { path: '/', title: 'Kanban Board', component: KanbanBoard },
@@ -39,6 +43,10 @@ const pages = [
   { path: '/questions', title: 'Questions', component: Questions },
   { path: '/questions-review', title: 'Review System Questions', component: QuestionsReview },
   { path: '/clause-history', title: 'Clause History', component: ClauseHistory },
+  { path: '/library', title: 'Library (empty)', component: Library },
+  { path: '/library/import/summary', title: 'Library Import Summary', component: LibraryImportSummary },
+  { path: '/library/import/confirm', title: 'Library Import Confirm', component: LibraryImportConfirm },
+  { path: '/library/import', title: 'Library Import', component: LibraryImport },
 ]
 
 function App() {

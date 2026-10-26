@@ -1,8 +1,14 @@
 import { DialogField, ButtonWidget, CardLayout, HeadingField } from '@pglevy/sailwind'
-import type { ClauseTextChange } from '../db/clause-history'
+import {
+  formatClauseHistoryTimestamp,
+  type ClauseHistoryEntry,
+  type ClauseTextChange,
+} from '../db/clause-history'
+import { getDisplayName } from '../db/users'
 import { OriginalTextView, UpdatedTextView } from './clause-change-views'
 
 interface ClauseTextChangesDialogProps {
+  entry: ClauseHistoryEntry
   change: ClauseTextChange
   onClose: () => void
 }
@@ -10,7 +16,13 @@ interface ClauseTextChangesDialogProps {
 const paneStyle = { height: 'calc(75vh - 17rem)', minHeight: '12rem' }
 
 /** Side-by-side view of the original clause text and the updated text, with what was removed and added. */
-export default function ClauseTextChangesDialog({ change, onClose }: ClauseTextChangesDialogProps) {
+export default function ClauseTextChangesDialog({
+  entry,
+  change,
+  onClose,
+}: ClauseTextChangesDialogProps) {
+  const subhead = `${getDisplayName(entry.modifiedBy)} • ${formatClauseHistoryTimestamp(entry.modifiedAt)}`
+
   return (
     <DialogField
       open={true}
@@ -18,7 +30,7 @@ export default function ClauseTextChangesDialog({ change, onClose }: ClauseTextC
         if (!open) onClose()
       }}
       title="Edited clause text"
-      description="Review the references below"
+      description={subhead}
       width="FIT"
       marginBelow="NONE"
     >

@@ -10,7 +10,15 @@ import {
   TextItem,
   TabsField,
 } from '@pglevy/sailwind'
-import { Library, PencilLine, Zap, Award, Settings2 } from 'lucide-react'
+import {
+  Library,
+  PencilLine,
+  Zap,
+  Award,
+  Settings2,
+  Check,
+  FileSpreadsheet,
+} from 'lucide-react'
 import QuestionsShell from '../components/questions-shell'
 import { importSystemQuestions, importCustomQuestions } from '../db/questions'
 import { EXCEL_ACCEPT, isExcelFile } from '../lib/excel-file'
@@ -61,6 +69,9 @@ export default function QuestionsLanding() {
   const [fileError, setFileError] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  /** Option 4 method picker. Defaults to 'system' so the first card is selected on open. */
+  const [method, setMethod] = useState<'system' | 'manual' | null>('system')
+
   const triggerSystemImport = () => {
     importSystemQuestions().then(() => setLocation('/questions'))
   }
@@ -101,8 +112,7 @@ export default function QuestionsLanding() {
           Import system questions
         </p>
         <p className="mt-1 text-sm text-gray-600">
-          Add the standard questions that ship with the solution. You can
-          review, edit, or remove them later.
+          Add the standard questions that ship with the response.
         </p>
       </div>
       <ButtonWidget
@@ -164,11 +174,10 @@ export default function QuestionsLanding() {
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-lg font-semibold text-gray-900">
-            Import manually
+            Upload manually
           </p>
           <p className="mt-1 text-sm text-gray-600">
-            Upload your own spreadsheet of questions. You can review, edit, or
-            remove them before saving.
+            Upload your own spreadsheet of questions.
           </p>
         </div>
         <ButtonWidget
@@ -257,6 +266,118 @@ export default function QuestionsLanding() {
     </div>
   )
 
+  /** Option 4 — method picker with two large illustrated cards and a Next button. */
+  const option4Content = (
+    <div className="pt-2">
+      {/* Heading */}
+      <div className="mb-10 flex items-center justify-center">
+        <span className="text-xl font-semibold text-gray-900">
+          Choose a method for adding questions
+        </span>
+      </div>
+
+      <div className="mx-auto grid max-w-3xl grid-cols-1 gap-6 md:grid-cols-2">
+        {/* System questions card */}
+        <button
+          type="button"
+          onClick={() => setMethod('system')}
+          aria-pressed={method === 'system'}
+          className={`relative overflow-hidden rounded-lg text-left transition-all ${
+            method === 'system'
+              ? 'border-2 border-indigo-600 shadow-md'
+              : 'border border-gray-200 bg-white hover:shadow-sm'
+          }`}
+        >
+          <span className="absolute left-4 top-4 z-10">
+            {method === 'system' ? (
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600">
+                <Check size={14} strokeWidth={3} className="text-white" aria-hidden="true" />
+              </span>
+            ) : (
+              <span className="block h-6 w-6 rounded-full border-2 border-gray-300 bg-white" />
+            )}
+          </span>
+
+          <div
+            className="flex items-center justify-center py-14"
+            style={{ backgroundColor: method === 'system' ? '#EEF2FF' : '#F9FAFB' }}
+          >
+            <Library
+              size={64}
+              color={method === 'system' ? '#4F46E5' : '#9CA3AF'}
+              strokeWidth={1.5}
+              aria-hidden="true"
+            />
+          </div>
+
+          <div className="bg-white px-6 py-5">
+            <p className="mb-2 text-base font-semibold text-gray-900">Import system questions</p>
+            <p className="text-sm text-gray-600">
+              Add the standard questions that ship with the response.
+            </p>
+          </div>
+        </button>
+
+        {/* Upload manually card */}
+        <button
+          type="button"
+          onClick={() => setMethod('manual')}
+          aria-pressed={method === 'manual'}
+          className={`relative overflow-hidden rounded-lg text-left transition-all ${
+            method === 'manual'
+              ? 'border-2 border-indigo-600 shadow-md'
+              : 'border border-gray-200 bg-white hover:shadow-sm'
+          }`}
+        >
+          <span className="absolute left-4 top-4 z-10">
+            {method === 'manual' ? (
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600">
+                <Check size={14} strokeWidth={3} className="text-white" aria-hidden="true" />
+              </span>
+            ) : (
+              <span className="block h-6 w-6 rounded-full border-2 border-gray-300 bg-white" />
+            )}
+          </span>
+
+          <div
+            className="flex items-center justify-center py-14"
+            style={{ backgroundColor: method === 'manual' ? '#ECFDF5' : '#F9FAFB' }}
+          >
+            <FileSpreadsheet
+              size={64}
+              color={method === 'manual' ? '#10B981' : '#9CA3AF'}
+              strokeWidth={1.5}
+              aria-hidden="true"
+            />
+          </div>
+
+          <div className="bg-white px-6 py-5">
+            <p className="mb-2 text-base font-semibold text-gray-900">Upload manually</p>
+            <p className="text-sm text-gray-600">Upload your own spreadsheet of questions.</p>
+          </div>
+        </button>
+      </div>
+
+      {/* Spacer so content never hides behind the fixed button */}
+      <div className="h-20" aria-hidden="true" />
+
+      {/* Next button — pinned to the bottom-right corner of the viewport */}
+      <div className="fixed bottom-6 right-8 z-40">
+        <ButtonWidget
+          label="Next"
+          style="SOLID"
+          color="ACCENT"
+          size="MEDIUM"
+          disabled={!method}
+          onClick={() => {
+            if (method === 'system') triggerSystemImport()
+            else if (method === 'manual') triggerUploadPicker()
+          }}
+        />
+      </div>
+    </div>
+  )
+
   return (
     <QuestionsShell>
       <div className="px-8 py-12">
@@ -305,6 +426,7 @@ export default function QuestionsLanding() {
               { value: 'option1', label: 'Option 1', content: option1Content },
               { value: 'option2', label: 'Option 2', content: option2Content },
               { value: 'option3', label: 'Option 3', content: option3Content },
+              { value: 'option4', label: 'Option 4', content: option4Content },
             ]}
             defaultValue="option1"
             variant="UNDERLINE"

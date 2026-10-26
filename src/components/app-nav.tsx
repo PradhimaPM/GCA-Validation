@@ -1,19 +1,27 @@
 import { SiteNav } from '@pglevy/sailwind'
-import { LayoutGrid, List, Layers, CircleHelp, Shuffle } from 'lucide-react'
+import { LayoutGrid, List, Layers, CircleHelp, Shuffle, BookOpen } from 'lucide-react'
+import { useLocation } from 'wouter'
 
 const navItems = [
-  { label: 'Clause Sets', icon: LayoutGrid },
-  { label: 'Clauses', icon: List },
-  { label: 'Templates', icon: Layers },
-  { label: 'Questionnaires', icon: CircleHelp },
-  { label: 'Rules', icon: Shuffle },
+  { label: 'Clause Sets', icon: LayoutGrid, path: null },
+  { label: 'Clauses', icon: List, path: null },
+  { label: 'Templates', icon: Layers, path: null },
+  { label: 'Questionnaires', icon: CircleHelp, path: '/questions-landing' },
+  { label: 'Rules', icon: Shuffle, path: '/rules' },
+  { label: 'Library', icon: BookOpen, path: '/library' },
 ]
 
 export type AppNavItem = (typeof navItems)[number]['label']
 
 /** Left site navigation shared by the Clause Automation pages. */
 export default function AppNav({ selected }: { selected: AppNavItem }) {
-  const pages = navItems.map(item => ({ ...item, isSelected: item.label === selected }))
+  const [, setLocation] = useLocation()
+
+  const pages = navItems.map(({ path, ...item }) => ({
+    ...item,
+    isSelected: item.label === selected,
+    onClick: path ? () => setLocation(path) : undefined,
+  }))
 
   return (
     // SiteNav is fixed at 240px with 14px labels. The arbitrary variants widen it to 280px and bump the text.

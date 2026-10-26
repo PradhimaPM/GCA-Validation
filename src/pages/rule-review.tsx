@@ -59,9 +59,6 @@ const statusTagColors: Record<RuleApprovalStatus, { background: string; text: st
 
 const UNSAVED_CONFIRM = 'You have unsaved changes. Discard them and continue?'
 
-const pluralize = (count: number, singular: string) =>
-  `${count} ${singular}${count === 1 ? '' : 's'}`
-
 /* -------------------------------------------------------------------------- */
 /* Read-only pieces                                                           */
 /* -------------------------------------------------------------------------- */
@@ -373,7 +370,7 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
               value={[
                 <TextItem
                   key="subtitle"
-                  text="Review the rule and accept it to add to the library"
+                  text="Required fields are marked with an asterisk (*)"
                   color="SECONDARY"
                   size="STANDARD"
                 />,
@@ -552,9 +549,7 @@ function RuleReviewScreen({ pendingOnly }: { pendingOnly: boolean }) {
                     marginBelow="EVEN_LESS"
                   />
                   <p className="text-xs text-gray-600">
-                    {conditionsMode === 'EDIT'
-                      ? "Ensure multiple conditions of the same clause data type aren't pointing to multiple different values"
-                      : `${pluralize(conditionTotal, 'condition')} · ${pluralize(review.groups.length, 'group')}`}
+                    Ensure multiple conditions of the same clause data type aren't pointing to multiple different values
                   </p>
                 </div>
                 <div className="shrink-0 inline-flex items-center gap-1 rounded-md bg-gray-100 p-1">

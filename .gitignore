@@ -32,3 +32,6 @@ appian-output/
 
 # Nested sibling repo kept locally — not part of this project
 arun-GCA-Validation/
+
+# Playwright MCP artifacts (screenshots, console logs, page snapshots)
+.playwright-mcp/

@@ -71,8 +71,9 @@ export default function ClauseHistory() {
     <div className="flex h-screen bg-white">
       <AppNav selected="Clauses" />
 
-      <main className="flex-1 overflow-y-auto border-l border-gray-200">
-        <div className="px-8 pt-6 pb-8">
+      <main className="flex min-w-0 flex-1 flex-col border-l border-gray-200">
+        {/* Full-width clause header stays above both the grid and the side pane */}
+        <div className="shrink-0 px-8 pt-6">
           <HeadingField
             text={clauseName}
             size="LARGE"
@@ -94,25 +95,29 @@ export default function ClauseHistory() {
             navigationOnly={true}
             marginBelow="STANDARD"
           />
+        </div>
 
-          <CardLayout padding="STANDARD" showBorder={false} showShadow={true} shape="SEMI_ROUNDED">
-            <TabsField
-              tabs={[
-                { value: 'option-1', label: 'Option 1: Pop-up' },
-                { value: 'option-2', label: 'Option 2: Side pane' },
-                { value: 'option-3', label: 'Option 3: Inline changes' },
-              ]}
-              value={view}
-              onValueChange={value => {
-                setView(value as ViewOption)
-                setOpenEntry(null)
-              }}
-              variant="UNDERLINE"
-              navigationOnly={true}
-              fullWidthSeparator={true}
-              marginBelow="STANDARD"
-            />
-            <ReadOnlyGrid
+        {/* Grid + side pane sit on the same row, each scrolling independently */}
+        <div className="flex min-h-0 flex-1 overflow-hidden">
+          <div className="min-w-0 flex-1 overflow-y-auto px-8 pb-8">
+            <CardLayout padding="STANDARD" showBorder={false} showShadow={true} shape="SEMI_ROUNDED">
+              <TabsField
+                tabs={[
+                  { value: 'option-1', label: 'Option 1: Pop-up' },
+                  { value: 'option-2', label: 'Option 2: Side pane' },
+                  { value: 'option-3', label: 'Option 3: Inline changes' },
+                ]}
+                value={view}
+                onValueChange={value => {
+                  setView(value as ViewOption)
+                  setOpenEntry(null)
+                }}
+                variant="UNDERLINE"
+                navigationOnly={true}
+                fullWidthSeparator={true}
+                marginBelow="STANDARD"
+              />
+              <ReadOnlyGrid
               data={entries}
               pageSize={20}
               pagingControls="ROW_COUNT"
@@ -185,21 +190,26 @@ export default function ClauseHistory() {
               />
             </ReadOnlyGrid>
           </CardLayout>
+          </div>
+
+          {view !== 'option-1' && openEntry?.textChange && (
+            <ClauseTextChangesPane
+              key={`${view}-${openEntry.id}`}
+              mode={view === 'option-3' ? 'views' : 'checkbox'}
+              entry={openEntry}
+              change={openEntry.textChange}
+              onClose={() => setOpenEntry(null)}
+            />
+          )}
         </div>
       </main>
 
-      {view !== 'option-1' && openEntry?.textChange && (
-        <ClauseTextChangesPane
-          key={`${view}-${openEntry.id}`}
-          mode={view === 'option-3' ? 'views' : 'checkbox'}
+      {view === 'option-1' && openEntry?.textChange && (
+        <ClauseTextChangesDialog
           entry={openEntry}
           change={openEntry.textChange}
           onClose={() => setOpenEntry(null)}
         />
-      )}
-
-      {view === 'option-1' && openEntry?.textChange && (
-        <ClauseTextChangesDialog change={openEntry.textChange} onClose={() => setOpenEntry(null)} />
       )}
     </div>
   )

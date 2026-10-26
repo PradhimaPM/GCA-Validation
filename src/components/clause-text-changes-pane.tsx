@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { HeadingField, ButtonWidget, CheckboxField, TabsField } from '@pglevy/sailwind'
 import {
-  countChanges,
   formatClauseHistoryTimestamp,
   type ClauseHistoryEntry,
   type ClauseTextChange,
@@ -37,7 +36,6 @@ export default function ClauseTextChangesPane({
 }: ClauseTextChangesPaneProps) {
   const [showOriginal, setShowOriginal] = useState(false)
   const [paneView, setPaneView] = useState<PaneView>('changes')
-  const counts = countChanges(change)
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -50,7 +48,7 @@ export default function ClauseTextChangesPane({
   return (
     <aside
       aria-label="Edited clause text"
-      className="flex h-screen w-[46%] min-w-[26rem] max-w-[52rem] shrink-0 flex-col border-l border-gray-200 bg-white"
+      className="flex h-full w-[36%] min-w-[22rem] max-w-[42rem] shrink-0 flex-col border-l border-gray-200 bg-white"
     >
       <div className="shrink-0 px-6 pt-5">
         <div className="flex items-start justify-between gap-4">
@@ -73,7 +71,6 @@ export default function ClauseTextChangesPane({
         </div>
         <p className="text-sm text-gray-600">
           {getDisplayName(entry.modifiedBy)} • {formatClauseHistoryTimestamp(entry.modifiedAt)}
-          {counts && ` • ${counts.removed} removed • ${counts.added} added`}
         </p>
       </div>
 
@@ -82,8 +79,8 @@ export default function ClauseTextChangesPane({
           <TabsField
             tabs={[
               { value: 'changes', label: 'Changes' },
-              { value: 'updated', label: 'Updated only' },
-              { value: 'original', label: 'Original only' },
+              { value: 'updated', label: 'Updated clause text' },
+              { value: 'original', label: 'Original clause text' },
             ]}
             value={paneView}
             onValueChange={value => setPaneView(value as PaneView)}

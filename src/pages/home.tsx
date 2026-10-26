@@ -21,6 +21,10 @@ export default function Home() {
     { title: 'Questions', path: '/questions', description: 'Searchable, sortable list of approved questions with response type, last modified, and status tags' },
     { title: 'Review System Questions', path: '/questions-review', description: 'Review imported system questions and approve or reject them before they appear in the Questions tab' },
     { title: 'Clause History', path: '/clause-history', description: 'Change log for a clause with user, modification and time, and a Show Changes pop-up that compares original and edited clause text' },
+    { title: 'Library', path: '/library', description: 'Library landing page with the "No library installed" empty state' },
+    { title: 'Library Import', path: '/library/import', description: 'Upload wizard with drag-and-drop file dropzone for the Rules & Questions library package' },
+    { title: 'Library Import Confirm', path: '/library/import/confirm', description: 'Pre-import summary: incoming version, package contents, and changes from the installed version' },
+    { title: 'Library Import Summary', path: '/library/import/summary', description: 'Post-import summary with overview, status, next steps, change counts, and object totals' },
   ]
 
   return (
