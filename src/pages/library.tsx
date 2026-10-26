@@ -6,7 +6,7 @@ export default function Library() {
   const [, setLocation] = useLocation()
 
   return (
-    <LibraryShell>
+    <LibraryShell showTabs={true} activeTab="option-1">
       {/* Page header */}
       <header className="bg-white border-b border-gray-200 px-8 py-6">
         <HeadingField
