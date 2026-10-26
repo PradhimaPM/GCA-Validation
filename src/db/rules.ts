@@ -1,793 +1,348 @@
 /**
  * Rules data layer.
- *
- * A Rule is a conditional expression that includes or excludes clauses from a
- * clause set based on clause set data (contract type, dollar threshold, agency,
- * place of performance, and so on).
- *
- * `lastUpdated` is stored as an ISO 8601 string so it sorts correctly. Pages
- * format it for display with `formatRuleTimestamp`.
+ * Conditional rules that include or exclude clauses based on clause set data.
  */
+
+export interface RuleCondition {
+  clauseData: string
+  operator: string
+  value: string
+  /** Optional context for Questionnaire Question conditions */
+  questionnaire?: string
+  question?: string
+}
+
+export interface RuleConditionGroup {
+  match: 'AND' | 'OR'
+  conditions: RuleCondition[]
+}
+
+export interface RuleClauseRef {
+  number: string
+  title: string
+}
 
 export interface Rule {
   id: number
   name: string
   status: 'Active' | 'Draft'
-  /** Standard rules ship with the solution. Custom rules are authored by the agency. */
-  source: 'Standard' | 'Custom'
-  /** Number of individual conditions across the rule. */
-  conditions: number
-  /** Number of condition groups wrapping those conditions. */
-  conditionGroups: number
+  source: 'Custom' | 'Standard'
+  conditionCount: number
+  groupCount: number
   includedClauses: number
   excludedClauses: number
-  /** ISO 8601 timestamp. */
   lastUpdated: string
   createdBy: string
-  modifiedBy: string
+  /** Review-specific fields (optional for brevity in seed data) */
+  reviewStatus?: 'Pending' | 'Accepted'
+  clauseNumber?: string
+  prescriptionText?: string
+  clauseText?: string
+  includedClauseList?: RuleClauseRef[]
+  excludedClauseList?: RuleClauseRef[]
+  conditionGroups?: RuleConditionGroup[]
 }
 
-const rawRules: Rule[] = [
+const rules: Rule[] = [
   {
     id: 1,
     name: 'pktestrule2',
     status: 'Active',
     source: 'Custom',
-    conditions: 7,
-    conditionGroups: 2,
-    includedClauses: 6,
-    excludedClauses: 4,
-    lastUpdated: '2026-10-01T15:35:00',
+    conditionCount: 1,
+    groupCount: 0,
+    includedClauses: 1,
+    excludedClauses: 1,
+    lastUpdated: 'Oct 1, 2026 3:35 PM',
     createdBy: 'john.smith',
-    modifiedBy: 'john.smith',
   },
   {
     id: 2,
     name: 'pktestrule1',
     status: 'Active',
     source: 'Standard',
-    conditions: 1,
-    conditionGroups: 0,
+    conditionCount: 1,
+    groupCount: 0,
     includedClauses: 1,
     excludedClauses: 1,
-    lastUpdated: '2026-09-29T15:40:00',
+    lastUpdated: 'Sep 29, 2026 3:40 PM',
     createdBy: 'john.smith',
-    modifiedBy: 'alice.chen',
   },
   {
     id: 3,
     name: 'Clause 19.24.2124 Inclusion',
     status: 'Draft',
     source: 'Custom',
-    conditions: 2,
-    conditionGroups: 1,
+    conditionCount: 2,
+    groupCount: 1,
     includedClauses: 0,
     excludedClauses: 0,
-    lastUpdated: '2026-09-29T14:29:00',
+    lastUpdated: 'Sep 29, 2026 2:29 PM',
     createdBy: 'alice.chen',
-    modifiedBy: 'alice.chen',
   },
   {
     id: 4,
     name: 'Clause 19.24.2124 Inclusion',
     status: 'Draft',
     source: 'Standard',
-    conditions: 1,
-    conditionGroups: 0,
+    conditionCount: 1,
+    groupCount: 0,
     includedClauses: 0,
     excludedClauses: 0,
-    lastUpdated: '2026-09-29T14:22:00',
+    lastUpdated: 'Sep 29, 2026 2:22 PM',
     createdBy: 'alice.chen',
-    modifiedBy: 'bob.martinez',
   },
   {
     id: 5,
     name: 'Test Hitesh 1',
     status: 'Active',
     source: 'Custom',
-    conditions: 1,
-    conditionGroups: 0,
+    conditionCount: 1,
+    groupCount: 0,
     includedClauses: 2,
     excludedClauses: 1,
-    lastUpdated: '2026-09-24T00:18:00',
+    lastUpdated: 'Sep 24, 2026 12:18 AM',
     createdBy: 'bob.martinez',
-    modifiedBy: 'bob.martinez',
   },
   {
     id: 6,
     name: 'Task Assignment to Contracting Officer',
     status: 'Active',
     source: 'Standard',
-    conditions: 4,
-    conditionGroups: 1,
+    conditionCount: 4,
+    groupCount: 1,
     includedClauses: 16,
     excludedClauses: 3,
-    lastUpdated: '2026-09-21T23:12:00',
+    lastUpdated: 'Sep 21, 2026 11:12 PM',
     createdBy: 'carol.white',
-    modifiedBy: 'john.smith',
   },
   {
     id: 7,
     name: 'GCA Rule',
     status: 'Active',
     source: 'Custom',
-    conditions: 4,
-    conditionGroups: 3,
+    conditionCount: 4,
+    groupCount: 3,
     includedClauses: 55,
     excludedClauses: 0,
-    lastUpdated: '2026-09-18T22:31:00',
+    lastUpdated: 'Sep 18, 2026 10:31 PM',
     createdBy: 'david.kim',
-    modifiedBy: 'david.kim',
   },
   {
     id: 8,
     name: 'Compliance Skip Check Rule',
     status: 'Active',
     source: 'Standard',
-    conditions: 1,
-    conditionGroups: 0,
+    conditionCount: 1,
+    groupCount: 0,
     includedClauses: 0,
     excludedClauses: 0,
-    lastUpdated: '2026-09-18T14:54:00',
-    createdBy: 'carol.white',
-    modifiedBy: 'carol.white',
+    lastUpdated: 'Sep 18, 2026 2:54 PM',
+    createdBy: 'david.kim',
   },
   {
     id: 9,
     name: 'rock Val Test',
     status: 'Active',
     source: 'Custom',
-    conditions: 1,
-    conditionGroups: 0,
+    conditionCount: 1,
+    groupCount: 0,
     includedClauses: 2,
     excludedClauses: 0,
-    lastUpdated: '2026-09-17T22:00:00',
+    lastUpdated: 'Sep 17, 2026 10:00 PM',
     createdBy: 'bob.martinez',
-    modifiedBy: 'bob.martinez',
   },
   {
     id: 10,
     name: 'Din Test',
     status: 'Active',
     source: 'Standard',
-    conditions: 2,
-    conditionGroups: 2,
+    conditionCount: 2,
+    groupCount: 2,
     includedClauses: 2,
     excludedClauses: 0,
-    lastUpdated: '2026-09-10T20:35:00',
-    createdBy: 'david.kim',
-    modifiedBy: 'alice.chen',
+    lastUpdated: 'Sep 10, 2026 8:35 PM',
+    createdBy: 'john.smith',
   },
   {
     id: 11,
-    name: 'Commercial Item Acquisition Threshold',
+    name: 'Subcontract Flow-Down Enforcement',
     status: 'Active',
     source: 'Standard',
-    conditions: 3,
-    conditionGroups: 1,
-    includedClauses: 12,
+    conditionCount: 3,
+    groupCount: 1,
+    includedClauses: 8,
     excludedClauses: 2,
-    lastUpdated: '2026-09-09T17:48:00',
-    createdBy: 'john.smith',
-    modifiedBy: 'john.smith',
+    lastUpdated: 'Sep 8, 2026 4:12 PM',
+    createdBy: 'alice.chen',
   },
   {
     id: 12,
-    name: 'Small Business Set-Aside Inclusion',
-    status: 'Active',
-    source: 'Standard',
-    conditions: 2,
-    conditionGroups: 0,
-    includedClauses: 8,
-    excludedClauses: 1,
-    lastUpdated: '2026-09-08T11:15:00',
-    createdBy: 'alice.chen',
-    modifiedBy: 'carol.white',
-  },
-  {
-    id: 13,
-    name: 'Service Contract Labor Standards',
-    status: 'Active',
-    source: 'Standard',
-    conditions: 3,
-    conditionGroups: 2,
-    includedClauses: 6,
-    excludedClauses: 0,
-    lastUpdated: '2026-09-07T09:02:00',
-    createdBy: 'carol.white',
-    modifiedBy: 'carol.white',
-  },
-  {
-    id: 14,
-    name: 'Construction Contract Over $2M',
+    name: 'Cybersecurity Baseline for IT Services',
     status: 'Draft',
     source: 'Custom',
-    conditions: 4,
-    conditionGroups: 2,
-    includedClauses: 21,
-    excludedClauses: 4,
-    lastUpdated: '2026-09-04T16:30:00',
-    createdBy: 'david.kim',
-    modifiedBy: 'david.kim',
-  },
-  {
-    id: 15,
-    name: 'Cost Accounting Standards Applicability',
-    status: 'Active',
-    source: 'Standard',
-    conditions: 5,
-    conditionGroups: 2,
-    includedClauses: 9,
-    excludedClauses: 3,
-    lastUpdated: '2026-09-03T13:44:00',
-    createdBy: 'john.smith',
-    modifiedBy: 'bob.martinez',
-  },
-  {
-    id: 16,
-    name: 'Trade Agreements Act Exclusion',
-    status: 'Active',
-    source: 'Standard',
-    conditions: 2,
-    conditionGroups: 1,
-    includedClauses: 0,
-    excludedClauses: 7,
-    lastUpdated: '2026-09-02T10:20:00',
-    createdBy: 'alice.chen',
-    modifiedBy: 'alice.chen',
-  },
-  {
-    id: 17,
-    name: 'Buy American Domestic Preference',
-    status: 'Active',
-    source: 'Standard',
-    conditions: 3,
-    conditionGroups: 1,
-    includedClauses: 5,
-    excludedClauses: 2,
-    lastUpdated: '2026-09-01T15:05:00',
-    createdBy: 'bob.martinez',
-    modifiedBy: 'john.smith',
-  },
-  {
-    id: 18,
-    name: 'Simplified Acquisition Procedures',
-    status: 'Active',
-    source: 'Custom',
-    conditions: 2,
-    conditionGroups: 0,
-    includedClauses: 4,
-    excludedClauses: 11,
-    lastUpdated: '2026-08-28T12:38:00',
-    createdBy: 'carol.white',
-    modifiedBy: 'carol.white',
-  },
-  {
-    id: 19,
-    name: 'IT Supply Chain Risk Screening',
-    status: 'Draft',
-    source: 'Custom',
-    conditions: 6,
-    conditionGroups: 3,
-    includedClauses: 14,
-    excludedClauses: 0,
-    lastUpdated: '2026-08-27T18:52:00',
-    createdBy: 'david.kim',
-    modifiedBy: 'alice.chen',
-  },
-  {
-    id: 20,
-    name: 'Section 889 Telecom Prohibition',
-    status: 'Active',
-    source: 'Standard',
-    conditions: 2,
-    conditionGroups: 1,
-    includedClauses: 3,
-    excludedClauses: 0,
-    lastUpdated: '2026-08-26T09:41:00',
-    createdBy: 'john.smith',
-    modifiedBy: 'john.smith',
-  },
-  {
-    id: 21,
-    name: 'Subcontracting Plan Requirement',
-    status: 'Active',
-    source: 'Standard',
-    conditions: 3,
-    conditionGroups: 1,
-    includedClauses: 6,
-    excludedClauses: 1,
-    lastUpdated: '2026-08-25T14:17:00',
-    createdBy: 'alice.chen',
-    modifiedBy: 'bob.martinez',
-  },
-  {
-    id: 22,
-    name: 'Davis-Bacon Wage Determination',
-    status: 'Active',
-    source: 'Standard',
-    conditions: 4,
-    conditionGroups: 2,
-    includedClauses: 10,
-    excludedClauses: 0,
-    lastUpdated: '2026-08-21T11:09:00',
-    createdBy: 'carol.white',
-    modifiedBy: 'david.kim',
-  },
-  {
-    id: 23,
-    name: 'Overseas Place of Performance',
-    status: 'Draft',
-    source: 'Custom',
-    conditions: 3,
-    conditionGroups: 1,
-    includedClauses: 7,
-    excludedClauses: 5,
-    lastUpdated: '2026-08-20T16:55:00',
-    createdBy: 'bob.martinez',
-    modifiedBy: 'bob.martinez',
-  },
-  {
-    id: 24,
-    name: 'GSA Schedule Order Baseline',
-    status: 'Active',
-    source: 'Standard',
-    conditions: 1,
-    conditionGroups: 0,
-    includedClauses: 18,
-    excludedClauses: 0,
-    lastUpdated: '2026-08-19T08:26:00',
-    createdBy: 'david.kim',
-    modifiedBy: 'carol.white',
-  },
-  {
-    id: 25,
-    name: 'Cybersecurity Maturity Model Certification',
-    status: 'Active',
-    source: 'Custom',
-    conditions: 4,
-    conditionGroups: 2,
-    includedClauses: 9,
-    excludedClauses: 1,
-    lastUpdated: '2026-08-18T13:33:00',
-    createdBy: 'john.smith',
-    modifiedBy: 'alice.chen',
-  },
-  {
-    id: 26,
-    name: 'Cost Reimbursement Contract Type',
-    status: 'Active',
-    source: 'Standard',
-    conditions: 2,
-    conditionGroups: 1,
-    includedClauses: 13,
-    excludedClauses: 2,
-    lastUpdated: '2026-08-14T15:12:00',
-    createdBy: 'alice.chen',
-    modifiedBy: 'alice.chen',
-  },
-  {
-    id: 27,
-    name: 'Firm Fixed Price Exclusions',
-    status: 'Active',
-    source: 'Standard',
-    conditions: 2,
-    conditionGroups: 0,
-    includedClauses: 0,
-    excludedClauses: 9,
-    lastUpdated: '2026-08-13T10:47:00',
-    createdBy: 'carol.white',
-    modifiedBy: 'john.smith',
-  },
-  {
-    id: 28,
-    name: 'HUBZone Price Evaluation Preference',
-    status: 'Draft',
-    source: 'Custom',
-    conditions: 3,
-    conditionGroups: 1,
-    includedClauses: 4,
-    excludedClauses: 0,
-    lastUpdated: '2026-08-12T17:21:00',
-    createdBy: 'david.kim',
-    modifiedBy: 'david.kim',
-  },
-  {
-    id: 29,
-    name: 'Service-Disabled Veteran-Owned Set-Aside',
-    status: 'Active',
-    source: 'Standard',
-    conditions: 2,
-    conditionGroups: 1,
-    includedClauses: 5,
-    excludedClauses: 1,
-    lastUpdated: '2026-08-11T09:58:00',
-    createdBy: 'bob.martinez',
-    modifiedBy: 'carol.white',
-  },
-  {
-    id: 30,
-    name: 'Protest After Award Notification',
-    status: 'Active',
-    source: 'Standard',
-    conditions: 1,
-    conditionGroups: 0,
-    includedClauses: 2,
-    excludedClauses: 0,
-    lastUpdated: '2026-08-07T14:04:00',
-    createdBy: 'john.smith',
-    modifiedBy: 'bob.martinez',
-  },
-  {
-    id: 31,
-    name: 'Economic Price Adjustment Threshold',
-    status: 'Draft',
-    source: 'Custom',
-    conditions: 5,
-    conditionGroups: 2,
-    includedClauses: 8,
-    excludedClauses: 3,
-    lastUpdated: '2026-08-06T11:39:00',
-    createdBy: 'alice.chen',
-    modifiedBy: 'david.kim',
-  },
-  {
-    id: 32,
-    name: 'Government Furnished Property',
-    status: 'Active',
-    source: 'Standard',
-    conditions: 3,
-    conditionGroups: 1,
-    includedClauses: 11,
-    excludedClauses: 0,
-    lastUpdated: '2026-08-05T16:48:00',
-    createdBy: 'carol.white',
-    modifiedBy: 'carol.white',
-  },
-  {
-    id: 33,
-    name: 'Options for Increased Quantity',
-    status: 'Active',
-    source: 'Standard',
-    conditions: 2,
-    conditionGroups: 0,
-    includedClauses: 3,
-    excludedClauses: 1,
-    lastUpdated: '2026-08-04T08:53:00',
-    createdBy: 'david.kim',
-    modifiedBy: 'john.smith',
-  },
-  {
-    id: 34,
-    name: 'Micro-Purchase Threshold Exclusion',
-    status: 'Active',
-    source: 'Custom',
-    conditions: 1,
-    conditionGroups: 0,
-    includedClauses: 0,
-    excludedClauses: 24,
-    lastUpdated: '2026-07-31T13:26:00',
-    createdBy: 'bob.martinez',
-    modifiedBy: 'alice.chen',
-  },
-  {
-    id: 35,
-    name: 'Equal Opportunity Compliance',
-    status: 'Active',
-    source: 'Standard',
-    conditions: 2,
-    conditionGroups: 1,
-    includedClauses: 6,
-    excludedClauses: 0,
-    lastUpdated: '2026-07-30T10:11:00',
-    createdBy: 'john.smith',
-    modifiedBy: 'carol.white',
-  },
-  {
-    id: 36,
-    name: 'Anti-Kickback Procedures Baseline',
-    status: 'Active',
-    source: 'Standard',
-    conditions: 1,
-    conditionGroups: 0,
-    includedClauses: 2,
-    excludedClauses: 0,
-    lastUpdated: '2026-07-29T15:37:00',
-    createdBy: 'alice.chen',
-    modifiedBy: 'alice.chen',
-  },
-  {
-    id: 37,
-    name: 'Rights in Technical Data',
-    status: 'Draft',
-    source: 'Custom',
-    conditions: 4,
-    conditionGroups: 2,
-    includedClauses: 7,
-    excludedClauses: 2,
-    lastUpdated: '2026-07-28T12:02:00',
-    createdBy: 'carol.white',
-    modifiedBy: 'david.kim',
-  },
-  {
-    id: 38,
-    name: 'Indefinite Delivery Indefinite Quantity',
-    status: 'Active',
-    source: 'Standard',
-    conditions: 3,
-    conditionGroups: 1,
-    includedClauses: 15,
-    excludedClauses: 1,
-    lastUpdated: '2026-07-24T17:44:00',
-    createdBy: 'david.kim',
-    modifiedBy: 'bob.martinez',
-  },
-  {
-    id: 39,
-    name: 'Sole Source Justification Required',
-    status: 'Active',
-    source: 'Custom',
-    conditions: 3,
-    conditionGroups: 1,
-    includedClauses: 4,
-    excludedClauses: 0,
-    lastUpdated: '2026-07-23T09:19:00',
-    createdBy: 'bob.martinez',
-    modifiedBy: 'bob.martinez',
-  },
-  {
-    id: 40,
-    name: 'Progress Payments Eligibility',
-    status: 'Active',
-    source: 'Standard',
-    conditions: 4,
-    conditionGroups: 2,
-    includedClauses: 9,
-    excludedClauses: 2,
-    lastUpdated: '2026-07-22T14:31:00',
-    createdBy: 'john.smith',
-    modifiedBy: 'john.smith',
-  },
-  {
-    id: 41,
-    name: 'Energy Efficient Product Procurement',
-    status: 'Draft',
-    source: 'Custom',
-    conditions: 2,
-    conditionGroups: 0,
-    includedClauses: 3,
-    excludedClauses: 0,
-    lastUpdated: '2026-07-21T11:07:00',
-    createdBy: 'alice.chen',
-    modifiedBy: 'carol.white',
-  },
-  {
-    id: 42,
-    name: 'Drug-Free Workplace Requirement',
-    status: 'Active',
-    source: 'Standard',
-    conditions: 2,
-    conditionGroups: 1,
-    includedClauses: 2,
-    excludedClauses: 0,
-    lastUpdated: '2026-07-17T16:23:00',
-    createdBy: 'carol.white',
-    modifiedBy: 'alice.chen',
-  },
-  {
-    id: 43,
-    name: 'Limitation of Funds Incremental',
-    status: 'Active',
-    source: 'Standard',
-    conditions: 3,
-    conditionGroups: 1,
-    includedClauses: 5,
-    excludedClauses: 1,
-    lastUpdated: '2026-07-16T08:49:00',
-    createdBy: 'david.kim',
-    modifiedBy: 'david.kim',
-  },
-  {
-    id: 44,
-    name: 'Contractor Personnel Badging',
-    status: 'Active',
-    source: 'Custom',
-    conditions: 4,
-    conditionGroups: 2,
-    includedClauses: 8,
-    excludedClauses: 0,
-    lastUpdated: '2026-07-15T13:14:00',
-    createdBy: 'bob.martinez',
-    modifiedBy: 'john.smith',
-  },
-  {
-    id: 45,
-    name: 'Inspection and Acceptance Terms',
-    status: 'Active',
-    source: 'Standard',
-    conditions: 2,
-    conditionGroups: 0,
-    includedClauses: 6,
-    excludedClauses: 1,
-    lastUpdated: '2026-07-14T10:36:00',
-    createdBy: 'john.smith',
-    modifiedBy: 'carol.white',
-  },
-  {
-    id: 46,
-    name: 'Organizational Conflict of Interest',
-    status: 'Draft',
-    source: 'Custom',
-    conditions: 5,
-    conditionGroups: 3,
+    conditionCount: 5,
+    groupCount: 2,
     includedClauses: 12,
     excludedClauses: 4,
-    lastUpdated: '2026-07-10T15:58:00',
-    createdBy: 'alice.chen',
-    modifiedBy: 'bob.martinez',
-  },
-  {
-    id: 47,
-    name: 'Past Performance Evaluation Clause',
-    status: 'Active',
-    source: 'Standard',
-    conditions: 1,
-    conditionGroups: 0,
-    includedClauses: 3,
-    excludedClauses: 0,
-    lastUpdated: '2026-07-09T12:27:00',
+    lastUpdated: 'Sep 5, 2026 10:45 AM',
     createdBy: 'carol.white',
-    modifiedBy: 'carol.white',
-  },
-  {
-    id: 48,
-    name: 'Novation and Change of Name',
-    status: 'Active',
-    source: 'Standard',
-    conditions: 2,
-    conditionGroups: 1,
-    includedClauses: 2,
-    excludedClauses: 0,
-    lastUpdated: '2026-07-08T17:05:00',
-    createdBy: 'david.kim',
-    modifiedBy: 'alice.chen',
-  },
-  {
-    id: 49,
-    name: 'Termination for Convenience Terms',
-    status: 'Active',
-    source: 'Standard',
-    conditions: 3,
-    conditionGroups: 1,
-    includedClauses: 7,
-    excludedClauses: 2,
-    lastUpdated: '2026-07-07T09:33:00',
-    createdBy: 'bob.martinez',
-    modifiedBy: 'david.kim',
-  },
-  {
-    id: 50,
-    name: 'Electronic Invoicing via IPP',
-    status: 'Active',
-    source: 'Custom',
-    conditions: 2,
-    conditionGroups: 0,
-    includedClauses: 4,
-    excludedClauses: 0,
-    lastUpdated: '2026-07-03T14:52:00',
-    createdBy: 'john.smith',
-    modifiedBy: 'john.smith',
-  },
-  {
-    id: 51,
-    name: 'Privacy Act System of Records',
-    status: 'Draft',
-    source: 'Custom',
-    conditions: 3,
-    conditionGroups: 1,
-    includedClauses: 5,
-    excludedClauses: 1,
-    lastUpdated: '2026-07-02T11:18:00',
-    createdBy: 'alice.chen',
-    modifiedBy: 'carol.white',
-  },
-  {
-    id: 52,
-    name: 'Recovered Material Certification',
-    status: 'Active',
-    source: 'Standard',
-    conditions: 2,
-    conditionGroups: 1,
-    includedClauses: 3,
-    excludedClauses: 0,
-    lastUpdated: '2026-07-01T16:41:00',
-    createdBy: 'carol.white',
-    modifiedBy: 'bob.martinez',
-  },
-  {
-    id: 53,
-    name: 'Contract Closeout Documentation',
-    status: 'Active',
-    source: 'Standard',
-    conditions: 1,
-    conditionGroups: 0,
-    includedClauses: 2,
-    excludedClauses: 0,
-    lastUpdated: '2026-06-30T08:24:00',
-    createdBy: 'david.kim',
-    modifiedBy: 'david.kim',
-  },
-  {
-    id: 54,
-    name: 'Warranty of Supplies Threshold',
-    status: 'Active',
-    source: 'Custom',
-    conditions: 3,
-    conditionGroups: 1,
-    includedClauses: 6,
-    excludedClauses: 2,
-    lastUpdated: '2026-06-26T13:09:00',
-    createdBy: 'bob.martinez',
-    modifiedBy: 'alice.chen',
-  },
-  {
-    id: 55,
-    name: 'Prohibition on Certain Semiconductors',
-    status: 'Draft',
-    source: 'Custom',
-    conditions: 4,
-    conditionGroups: 2,
-    includedClauses: 9,
-    excludedClauses: 0,
-    lastUpdated: '2026-06-25T15:46:00',
-    createdBy: 'john.smith',
-    modifiedBy: 'john.smith',
-  },
-  {
-    id: 56,
-    name: 'Alternate Dispute Resolution',
-    status: 'Active',
-    source: 'Standard',
-    conditions: 2,
-    conditionGroups: 0,
-    includedClauses: 2,
-    excludedClauses: 0,
-    lastUpdated: '2026-06-24T10:03:00',
-    createdBy: 'alice.chen',
-    modifiedBy: 'carol.white',
-  },
-  {
-    id: 57,
-    name: 'Emergency Acquisition Flexibilities',
-    status: 'Active',
-    source: 'Custom',
-    conditions: 5,
-    conditionGroups: 2,
-    includedClauses: 17,
-    excludedClauses: 6,
-    lastUpdated: '2026-06-23T17:29:00',
-    createdBy: 'carol.white',
-    modifiedBy: 'david.kim',
   },
 ]
 
-// Each rule has at most ONE included clause OR ONE excluded clause, never both.
-// Pick the side the rule originally had more of; ties favor Included.
-// Rules with no clauses on either side stay at 0/0.
-const rules: Rule[] = rawRules.map(rule => {
-  const hasIncluded = rule.includedClauses > 0
-  const hasExcluded = rule.excludedClauses > 0
-  if (!hasIncluded && !hasExcluded) {
-    return { ...rule, includedClauses: 0, excludedClauses: 0 }
+/** Total number of rules across all pages (for paging display). */
+export const RULE_TOTAL_COUNT = 57
+
+// ---- Sample content pools (used to generate review details) ----------------
+
+const CLAUSE_NUMBERS = [
+  '52.200.204',
+  '52.203-6',
+  '52.219-14',
+  '52.222-50',
+  '52.204-21',
+  '52.212-5',
+  '52.223-18',
+  '52.225-13',
+]
+
+const PRESCRIPTION_PARAGRAPHS = [
+  `As prescribed in 22.810(e), insert the following clause in solicitations and contracts when the clause set type is Solicitation or Award and the contract exceeds the simplified acquisition threshold. The contracting officer must verify that the conditions in paragraph (b) are met before including this clause.`,
+  `Use this clause only when the acquisition is for commercial items as defined in FAR 2.101, when the place of performance is within the United States or an outlying area, and when the requirements described in subpart 22.8 apply to the Contractor or any subcontractors at any tier.`,
+  `The clause must also be included in any subcontract (other than a subcontract for commercial items) in excess of $10,000, unless specifically exempted by the Deputy Assistant Secretary for Federal Contract Compliance Programs under the authority of 41 CFR 60-1.5(b).`,
+  `Insert the clause as modified where the contract is for construction work (whether or not subject to the Davis-Bacon Act). Where the contract is subject to section 503 of the Rehabilitation Act of 1973, the Contractor shall take affirmative action to employ and advance in employment qualified individuals with disabilities.`,
+  `Flow-down of this clause is required to subcontractors and vendors at every tier whose work directly supports performance of this contract. The Contractor shall remain responsible for compliance by its subcontractors, and failure of a subcontractor to comply does not relieve the Contractor of its own obligations.`,
+  `Finally, this clause must be read in conjunction with the applicable Executive Orders, implementing regulations issued by the Secretary of Labor, and any supplemental agency guidance that is in effect at the time of contract award. The contracting officer should document the file to show that each condition in paragraphs (a) through (d) has been considered before incorporating the clause.`,
+]
+
+const CLAUSE_TEXT_PARAGRAPHS = [
+  `Equal Opportunity (Sep 2016)`,
+  `(a) Definitions. As used in this clause—"Compensation" means any payments made to, or on behalf of, an employee or offered to an applicant as remuneration for employment, including but not limited to salary, wages, overtime pay, shift differentials, bonuses, commissions, vacation and holiday pay, allowances, insurance and other benefits, stock options and awards, profit sharing, and retirement.`,
+  `(b) The Contractor agrees that it will not discriminate against any employee or applicant for employment because of race, color, religion, sex, sexual orientation, gender identity, or national origin. However, it shall not be a violation of this clause for the Contractor to extend a publicly announced preference in employment to Indians living on or near an Indian reservation, in connection with employment opportunities on or near an Indian reservation, as permitted by 41 CFR 60-1.5.`,
+  `(c) The Contractor will take affirmative action to ensure that applicants are employed, and that employees are treated during employment, without regard to their race, color, religion, sex, sexual orientation, gender identity, or national origin. This shall include, but not be limited to employment, upgrading, demotion, transfer, recruitment or recruitment advertising, layoff or termination, rates of pay or other forms of compensation, and selection for training, including apprenticeship.`,
+  `(d) The Contractor agrees to post in conspicuous places, available to employees and applicants for employment, notices to be provided by the Contracting Officer that explain this clause.`,
+  `(e) The Contractor will, in all solicitations or advertisements for employees placed by or on behalf of the Contractor, state that all qualified applicants will receive consideration for employment without regard to race, color, religion, sex, sexual orientation, gender identity, or national origin.`,
+  `(f) The Contractor will send, to each labor union or representative of workers with which it has a collective bargaining agreement or other contract or understanding, the notice to be provided by the Contracting Officer advising the labor union or workers' representative of the Contractor's commitments under this clause, and post copies of the notice in conspicuous places available to employees and applicants for employment.`,
+  `(g) The Contractor will comply with all provisions of Executive Order 11246 of September 24, 1965, and of the rules, regulations, and relevant orders of the Secretary of Labor.`,
+  `(h) The Contractor will furnish all information and reports required by Executive Order 11246 of September 24, 1965, and by the rules, regulations, and orders of the Secretary of Labor, or pursuant thereto, and will permit access to its books, records, and accounts by the administering agency and the Secretary of Labor for purposes of investigation to ascertain compliance with such rules, regulations, and orders.`,
+  `(i) In the event of the Contractor's noncompliance with the Equal Opportunity clause of this contract or with any of the said rules, regulations, or orders, this contract may be canceled, terminated, or suspended, in whole or in part, and the Contractor may be declared ineligible for further Government contracts in accordance with procedures authorized in Executive Order 11246 of September 24, 1965, and such other sanctions may be imposed and remedies invoked as provided in that order or by rule, regulation, or order of the Secretary of Labor, or as otherwise provided by law.`,
+  `(j) The Contractor will include the terms and conditions of paragraphs (b) through (i) of this clause in every subcontract or purchase order unless exempted by rules, regulations, or orders of the Secretary of Labor issued pursuant to section 204 of Executive Order 11246 of September 24, 1965, so that such provisions will be binding upon each subcontractor or vendor.`,
+]
+
+const INCLUDED_POOL: RuleClauseRef[] = [
+  { number: '52.203-6', title: 'Restrictions on Subcontractor Sales to the Government' },
+  { number: '52.203-7', title: 'Anti-Kickback Procedures' },
+  { number: '52.203-13', title: 'Contractor Code of Business Ethics and Conduct' },
+  { number: '52.204-10', title: 'Reporting Executive Compensation and First-Tier Subcontract Awards' },
+  { number: '52.204-21', title: 'Basic Safeguarding of Covered Contractor Information Systems' },
+  { number: '52.209-6', title: 'Protecting the Government\'s Interest When Subcontracting with Contractors Debarred, Suspended, or Proposed for Debarment' },
+  { number: '52.219-8', title: 'Utilization of Small Business Concerns' },
+  { number: '52.219-9', title: 'Small Business Subcontracting Plan' },
+  { number: '52.219-14', title: 'Limitations on Subcontracting' },
+  { number: '52.222-3', title: 'Convict Labor' },
+  { number: '52.222-21', title: 'Prohibition of Segregated Facilities' },
+  { number: '52.222-26', title: 'Equal Opportunity' },
+  { number: '52.222-35', title: 'Equal Opportunity for Veterans' },
+  { number: '52.222-36', title: 'Equal Opportunity for Workers with Disabilities' },
+  { number: '52.222-37', title: 'Employment Reports on Veterans' },
+  { number: '52.222-50', title: 'Combating Trafficking in Persons' },
+  { number: '52.223-18', title: 'Encouraging Contractor Policies to Ban Text Messaging While Driving' },
+  { number: '52.225-13', title: 'Restrictions on Certain Foreign Purchases' },
+  { number: '52.232-33', title: 'Payment by Electronic Funds Transfer—System for Award Management' },
+  { number: '52.233-3', title: 'Protest After Award' },
+  { number: '52.233-4', title: 'Applicable Law for Breach of Contract Claim' },
+  { number: '52.247-64', title: 'Preference for Privately Owned U.S.-Flag Commercial Vessels' },
+]
+
+const EXCLUDED_POOL: RuleClauseRef[] = [
+  { number: '52.203-10', title: 'Price or Fee Adjustment for Illegal or Improper Activity' },
+  { number: '52.203-11', title: 'Certification and Disclosure Regarding Payments to Influence Certain Federal Transactions' },
+  { number: '52.203-12', title: 'Limitation on Payments to Influence Certain Federal Transactions' },
+  { number: '52.204-9', title: 'Personal Identity Verification of Contractor Personnel' },
+  { number: '52.209-10', title: 'Prohibition on Contracting with Inverted Domestic Corporations' },
+  { number: '52.215-2', title: 'Audit and Records—Negotiation' },
+  { number: '52.219-28', title: 'Post-Award Small Business Program Rerepresentation' },
+  { number: '52.222-19', title: 'Child Labor—Cooperation with Authorities and Remedies' },
+  { number: '52.222-40', title: 'Notification of Employee Rights Under the National Labor Relations Act' },
+  { number: '52.222-41', title: 'Service Contract Labor Standards' },
+  { number: '52.223-15', title: 'Energy Efficiency in Energy-Consuming Products' },
+  { number: '52.225-25', title: 'Prohibition on Contracting with Entities Engaging in Certain Activities' },
+  { number: '52.232-39', title: 'Unenforceability of Unauthorized Obligations' },
+  { number: '52.244-6', title: 'Subcontracts for Commercial Items' },
+]
+
+const CONDITION_BUILDERS: (() => RuleCondition)[] = [
+  () => ({ clauseData: 'Clause Set Type', operator: 'Equals', value: 'Solicitation' }),
+  () => ({ clauseData: 'Clause Set Type', operator: 'Equals', value: 'Award' }),
+  () => ({ clauseData: 'Clause Set Type', operator: 'Equals', value: 'Modification' }),
+  () => ({ clauseData: 'Contract Category', operator: 'Equals', value: 'Commercial Items' }),
+  () => ({ clauseData: 'Contract Category', operator: 'Not Equals', value: 'Construction' }),
+  () => ({ clauseData: 'Contract Value', operator: 'Greater Than', value: '$250,000' }),
+  () => ({ clauseData: 'Contract Value', operator: 'Less Than', value: '$5,000,000' }),
+  () => ({ clauseData: 'Place of Performance', operator: 'Equals', value: 'United States' }),
+  () => ({ clauseData: 'Set-Aside Type', operator: 'Equals', value: 'Small Business' }),
+  () => ({ clauseData: 'Set-Aside Type', operator: 'Equals', value: 'HUBZone' }),
+  () => ({
+    clauseData: 'Questionnaire Question',
+    operator: 'Not Equals',
+    value: 'Less than one hour',
+    questionnaire: 'QNM 200 - 16',
+    question: 'What is the response time for critical incidents at the engineer level?',
+  }),
+  () => ({ clauseData: 'Agency', operator: 'Equals', value: 'Department of Defense' }),
+  () => ({ clauseData: 'Period of Performance', operator: 'Greater Than', value: '12 months' }),
+]
+
+function pick<T>(arr: T[], count: number, offset = 0): T[] {
+  const out: T[] = []
+  for (let i = 0; i < count && i < arr.length; i++) {
+    out.push(arr[(offset + i) % arr.length])
   }
-  if (rule.includedClauses >= rule.excludedClauses) {
-    return { ...rule, includedClauses: 1, excludedClauses: 0 }
+  return out
+}
+
+// Attach review-specific details to each rule. Numbers are intentionally
+// generous so the review screen can be stress-tested with long content.
+rules.forEach((r, i) => {
+  r.reviewStatus = r.reviewStatus ?? 'Pending'
+  r.clauseNumber = r.clauseNumber ?? CLAUSE_NUMBERS[i % CLAUSE_NUMBERS.length]
+
+  // Long multi-paragraph prescription text.
+  r.prescriptionText = r.prescriptionText ?? PRESCRIPTION_PARAGRAPHS.join('\n\n')
+
+  // Long clause text with structured paragraphs.
+  r.clauseText = r.clauseText ?? CLAUSE_TEXT_PARAGRAPHS.join('\n\n')
+
+  // Pump up included/excluded counts and lists.
+  const includedCount = Math.max(r.includedClauses, 6) + (i % 4) * 2
+  const excludedCount = Math.max(r.excludedClauses, 4) + (i % 3)
+  r.includedClauses = includedCount
+  r.excludedClauses = excludedCount
+  r.includedClauseList = r.includedClauseList ?? pick(INCLUDED_POOL, includedCount, i)
+  r.excludedClauseList = r.excludedClauseList ?? pick(EXCLUDED_POOL, excludedCount, i * 2)
+
+  // Multiple condition groups, each with several conditions.
+  const groupCount = Math.max(r.groupCount, 2) + (i % 2)
+  const groups: RuleConditionGroup[] = []
+  for (let g = 0; g < groupCount; g++) {
+    const conditionCount = 3 + ((g + i) % 3) // 3–5 per group
+    const conditions: RuleCondition[] = []
+    for (let c = 0; c < conditionCount; c++) {
+      conditions.push(CONDITION_BUILDERS[(g * 3 + c + i) % CONDITION_BUILDERS.length]())
+    }
+    groups.push({ match: g % 2 === 0 ? 'AND' : 'OR', conditions })
   }
-  return { ...rule, includedClauses: 0, excludedClauses: 1 }
+  r.conditionCount = groups.reduce((n, g) => n + g.conditions.length, 0)
+  r.groupCount = groupCount
+  r.conditionGroups = r.conditionGroups ?? groups
 })
 
 export async function getRules(): Promise<Rule[]> {
-  return rules
+  return [...rules]
+}
+
+export async function getRulesBySource(source: 'Custom' | 'Standard'): Promise<Rule[]> {
+  return rules.filter(r => r.source === source).map(r => ({ ...r }))
 }
 
 export async function getRule(id: number): Promise<Rule | undefined> {
@@ -796,7 +351,8 @@ export async function getRule(id: number): Promise<Rule | undefined> {
 
 export async function createRule(data: Omit<Rule, 'id'>): Promise<Rule> {
   const newRule = { ...data, id: Math.max(0, ...rules.map(r => r.id)) + 1 }
-  rules.push(newRule)
+  // Prepend so newly created rules appear at the top of the grid.
+  rules.unshift(newRule)
   return newRule
 }
 
@@ -807,33 +363,16 @@ export async function updateRule(id: number, data: Partial<Rule>): Promise<Rule 
   return rules[idx]
 }
 
+export async function acceptRuleReview(id: number): Promise<Rule | undefined> {
+  const idx = rules.findIndex(r => r.id === id)
+  if (idx === -1) return undefined
+  rules[idx] = { ...rules[idx], reviewStatus: 'Accepted' }
+  return rules[idx]
+}
+
 export async function deleteRule(id: number): Promise<boolean> {
   const idx = rules.findIndex(r => r.id === id)
   if (idx === -1) return false
   rules.splice(idx, 1)
   return true
-}
-
-/** Formats an ISO timestamp the way the Rules grid displays it, e.g. "Oct 1, 2026 3:35 PM". */
-export function formatRuleTimestamp(iso: string): string {
-  const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return iso
-  const datePart = date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  })
-  const timePart = date.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  })
-  return `${datePart} ${timePart}`
-}
-
-/** Summarizes a rule's condition structure, e.g. "2 conditions • 1 group". */
-export function formatRuleConditions(rule: Rule): string {
-  const conditionLabel = `${rule.conditions} condition${rule.conditions === 1 ? '' : 's'}`
-  const groupLabel = `${rule.conditionGroups} group${rule.conditionGroups === 1 ? '' : 's'}`
-  return `${conditionLabel} • ${groupLabel}`
 }

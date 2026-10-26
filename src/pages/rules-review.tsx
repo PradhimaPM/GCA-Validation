@@ -1,344 +1,1067 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useLocation } from 'wouter'
+import { SiteNav, ButtonWidget } from '@pglevy/sailwind'
 import {
-  SiteNav,
-  HeadingField,
-  CardLayout,
-  ReadOnlyGrid,
-  GridColumn,
-  ButtonWidget,
-  TextField,
-  DropdownField,
-  RichTextDisplayField,
-  TextItem,
-  TagField,
-  DialogField,
-} from '@pglevy/sailwind'
-import {
+  LayoutList,
   List,
-  CircleHelp,
+  Layers,
+  HelpCircle,
   Shuffle,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
   Pencil,
+  Eye,
+  Plus,
+  X,
 } from 'lucide-react'
-import {
-  getRuleApprovals,
-  formatRuleApprovalConditions,
-  type RuleApproval,
-  type RuleApprovalStatus,
-  type RuleActiveStatus,
-} from '../db/rule-approvals'
-import { formatRuleTimestamp } from '../db/rules'
+import { useLocation } from 'wouter'
+import { getRules, acceptRuleReview, type Rule } from '../db/rules'
 
-const navPages = [
-  { label: 'Clauses', icon: List },
-  { label: 'Questionnaires', icon: CircleHelp },
-  { label: 'Rules', icon: Shuffle, isSelected: true },
+type Mode = 'EDIT' | 'PREVIEW'
+type Option = 'option1' | 'option2'
+
+const OPTION_TABS: { id: Option; label: string }[] = [
+  { id: 'option1', label: 'Option 1' },
+  { id: 'option2', label: 'Option 2' },
 ]
 
-const reviewStatusChoices: RuleApprovalStatus[] = ['Pending', 'Approved']
-const activeStatusChoices: RuleActiveStatus[] = ['Active', 'Inactive']
-
-const statusTagColors: Record<RuleApprovalStatus, { background: string; text: string }> = {
-  Pending: { background: '#DBEAFE', text: '#1E40AF' },
-  Approved: { background: '#D7F3E0', text: '#166534' },
-}
-
 export default function RulesReview() {
-  const [, setLocation] = useLocation()
-  const [rules, setRules] = useState<RuleApproval[]>([])
-  const [loading, setLoading] = useState(true)
-  const [searchInput, setSearchInput] = useState('')
-  const [appliedSearch, setAppliedSearch] = useState('')
-  const [reviewStatusFilter, setReviewStatusFilter] = useState<string | null>(null)
-  const [activeStatusFilter, setActiveStatusFilter] = useState<string | null>(null)
-  const [confirmingExport, setConfirmingExport] = useState(false)
+  const [location, setLocation] = useLocation()
+  // Derive the option from the URL so each tab has its own shareable link.
+  const option: Option = location.includes('option-2') ? 'option2' : 'option1'
+  const setOption = (next: Option) =>
+    setLocation(next === 'option2' ? '/rules-review/option-2' : '/rules-review')
+  const [rules, setRules] = useState<Rule[]>([])
 
   useEffect(() => {
-    getRuleApprovals().then(data => {
-      setRules(data)
-      setLoading(false)
-    })
+    getRules().then(setRules)
   }, [])
 
-  const filteredRules = useMemo(() => {
-    const term = appliedSearch.trim().toLowerCase()
-    return rules.filter(rule => {
-      const matchesSearch = term === '' || rule.name.toLowerCase().includes(term)
-      const matchesReviewStatus =
-        reviewStatusFilter === null || rule.status === reviewStatusFilter
-      const matchesActiveStatus =
-        activeStatusFilter === null || rule.activeStatus === activeStatusFilter
-      return matchesSearch && matchesReviewStatus && matchesActiveStatus
-    })
-  }, [rules, appliedSearch, reviewStatusFilter, activeStatusFilter])
-
-  const handleRefresh = async () => {
-    setSearchInput('')
-    setAppliedSearch('')
-    setReviewStatusFilter(null)
-    setActiveStatusFilter(null)
-    // The data layer returns the same array each time, so copy it to trigger a re-render.
-    setRules([...(await getRuleApprovals())])
+  const refresh = async () => {
+    const all = await getRules()
+    setRules(all)
+    return all
   }
 
+  const total = rules.length
+  const acceptedCount = rules.filter(r => r.reviewStatus === 'Accepted').length
+
+  const navPages = [
+    { label: 'Clause Sets', icon: LayoutList },
+    { label: 'Clauses', icon: List },
+    { label: 'Templates', icon: Layers },
+    { label: 'Questionnaires', icon: HelpCircle },
+    { label: 'Rules', icon: Shuffle, isSelected: true },
+  ]
+
   return (
-    <div className="flex h-screen bg-white">
+    <div className="flex h-screen bg-gray-50 overflow-hidden">
       <SiteNav
         displayName="Clause Automation"
         pages={navPages}
-        userName="Pradhima P M"
-        appianLogoSrc="/images/icon-appian-header.png"
-        highlightColor="#C7C4F4"
+        userName="Arun Ganesh"
+        highlightColor="ACCENT"
       />
 
-      <main className="flex-1 overflow-y-auto border-l border-gray-200 bg-gray-50">
-        <div className="border-b border-gray-200 bg-white px-8 py-6">
-          <div className="flex items-start justify-between gap-6">
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Title row */}
+        <div className="flex items-center justify-between px-8 pt-5 pb-3 flex-shrink-0 bg-white">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setLocation('/rules')}
+              aria-label="Back to Rules"
+              className="p-1 text-gray-500 hover:text-gray-700 rounded hover:bg-gray-100"
+            >
+              <ChevronLeft size={20} />
+            </button>
             <div>
-              <HeadingField
-                text="Rules"
-                size="LARGE"
-                headingTag="H1"
-                fontWeight="REGULAR"
-                marginBelow="EVEN_LESS"
-              />
-              <RichTextDisplayField
-                value={[
-                  <TextItem
-                    key="subtitle"
-                    text="Review the rules and accept them to add to the library"
-                    color="SECONDARY"
-                    size="STANDARD"
-                  />,
-                ]}
-                marginBelow="NONE"
-              />
-            </div>
-            <div className="shrink-0 pt-1">
-              <ButtonWidget
-                label="Export Package"
-                style="OUTLINE"
-                color="ACCENT"
-                size="SMALL"
-                icon="Box"
-                iconPosition="START"
-                onClick={() => setConfirmingExport(true)}
-              />
+              <h1 className="text-2xl font-normal text-gray-900">Review Rules</h1>
+              <p className="text-sm text-gray-500 mt-0.5">
+                Review the rules generated by the OOTB library and accept them one by one
+              </p>
             </div>
           </div>
+          <span className="text-sm text-gray-600">
+            <span className="font-semibold text-gray-900">{acceptedCount}</span> of {total} accepted
+          </span>
         </div>
 
-        <div className="px-8 py-6">
-          <CardLayout padding="STANDARD" showBorder={true} shape="SEMI_ROUNDED" style="#FFFFFF">
-            <div className="flex items-center gap-3 mb-4 flex-nowrap">
-              <div className="w-64 shrink-0">
-                <TextField
-                  label="Search Rules"
-                  labelPosition="COLLAPSED"
-                  placeholder="Search Rules"
-                  value={searchInput}
-                  saveInto={setSearchInput}
-                  marginBelow="NONE"
-                />
-              </div>
-
-              <ButtonWidget
-                label="SEARCH"
-                style="OUTLINE"
-                color="ACCENT"
-                onClick={() => setAppliedSearch(searchInput)}
-              />
-
-              <div className="w-64 shrink-0">
-                <DropdownField
-                  label="REVIEW STATUS"
-                  labelPosition="ADJACENT"
-                  placeholder="Any"
-                  choiceLabels={reviewStatusChoices}
-                  choiceValues={reviewStatusChoices}
-                  value={reviewStatusFilter}
-                  saveInto={value => setReviewStatusFilter(value ?? null)}
-                  marginBelow="NONE"
-                />
-              </div>
-
-              <div className="w-56 shrink-0">
-                <DropdownField
-                  label="STATUS"
-                  labelPosition="ADJACENT"
-                  placeholder="Any"
-                  choiceLabels={activeStatusChoices}
-                  choiceValues={activeStatusChoices}
-                  value={activeStatusFilter}
-                  saveInto={value => setActiveStatusFilter(value ?? null)}
-                  marginBelow="NONE"
-                />
-              </div>
-
-              <div className="ml-auto flex items-center gap-2 shrink-0">
-                <ButtonWidget
-                  style="OUTLINE"
-                  color="SECONDARY"
-                  icon="Download"
-                  tooltip="Export"
-                  accessibilityText="Export"
-                  onClick={() => alert('Export is not wired up in this prototype.')}
-                />
-                <ButtonWidget
-                  style="OUTLINE"
-                  color="SECONDARY"
-                  icon="Filter"
-                  tooltip="Filter"
-                  accessibilityText="Filter"
-                  onClick={() => alert('Filter is not wired up in this prototype.')}
-                />
-                <ButtonWidget
-                  style="OUTLINE"
-                  color="SECONDARY"
-                  icon="RefreshCw"
-                  tooltip="Refresh"
-                  accessibilityText="Refresh"
-                  onClick={handleRefresh}
-                />
-              </div>
-            </div>
-
-            <ReadOnlyGrid
-              data={filteredRules}
-              pageSize={10}
-              pagingControls="ROW_COUNT"
-              borderStyle="LIGHT"
-              rowHeader={0}
-              initialSorts={[{ field: 'lastUpdated', ascending: false }]}
-              emptyGridMessage={loading ? 'Loading rules...' : 'No rules match your search.'}
-              accessibilityText="Rules that include or exclude clauses based on clause set data, with approval status"
+        {/* Option tabs */}
+        <div className="flex items-center gap-6 px-8 border-b border-gray-200 flex-shrink-0 bg-white">
+          {OPTION_TABS.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setOption(tab.id)}
+              className={`py-3 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                option === tab.id
+                  ? 'border-[#2322F0] text-[#2322F0]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
             >
-              <GridColumn
-                label="Name"
-                sortField="name"
-                width="WIDE"
-                value="name"
-              />
-              <GridColumn
-                label="Review Status"
-                sortField="status"
-                width="MEDIUM"
-                align="START"
-                value={(row: RuleApproval) => (
-                  <TagField
-                    size="SMALL"
-                    tags={[
-                      {
-                        text: row.status,
-                        backgroundColor: statusTagColors[row.status].background,
-                        textColor: statusTagColors[row.status].text,
-                      },
-                    ]}
-                    marginBelow="NONE"
-                  />
-                )}
-              />
-              <GridColumn
-                label="Status"
-                sortField="activeStatus"
-                width="NARROW"
-                align="START"
-                value="activeStatus"
-              />
-              <GridColumn
-                label="Conditions"
-                sortField="conditions"
-                width="MEDIUM"
-                value={(row: RuleApproval) => formatRuleApprovalConditions(row)}
-              />
-              <GridColumn
-                label="Included Clauses"
-                sortField="includedClauses"
-                width="MEDIUM"
-                align="START"
-                value="includedClauses"
-              />
-              <GridColumn
-                label="Excluded Clauses"
-                sortField="excludedClauses"
-                width="MEDIUM"
-                align="START"
-                value="excludedClauses"
-              />
-              <GridColumn
-                label="Last Updated"
-                sortField="lastUpdated"
-                width="MEDIUM_PLUS"
-                align="END"
-                value={(row: RuleApproval) => (
-                  <RichTextDisplayField
-                    value={[
-                      <TextItem key="updated" text={formatRuleTimestamp(row.lastUpdated)} />,
-                    ]}
-                    align="RIGHT"
-                    preventWrapping={true}
-                    marginBelow="NONE"
-                  />
-                )}
-              />
-              <GridColumn
-                label="Edit"
-                width="ICON"
-                align="CENTER"
-                value={(row: RuleApproval) => (
-                  <button
-                    type="button"
-                    onClick={() => setLocation(`/rules-review/${row.id}`)}
-                    aria-label={`Edit ${row.name}`}
-                    className="inline-flex items-center justify-center rounded p-1 text-blue-700 hover:bg-blue-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-                  >
-                    <Pencil size={18} aria-hidden="true" />
-                  </button>
-                )}
-              />
-            </ReadOnlyGrid>
-          </CardLayout>
+              {tab.label}
+            </button>
+          ))}
         </div>
 
-        {confirmingExport && (
-          <DialogField
-            open={true}
-            onOpenChange={open => {
-              if (!open) setConfirmingExport(false)
-            }}
-            title="Export package?"
-            width="MEDIUM"
-            height="FIT"
-            closeOnOutsideClick={false}
-            marginBelow="NONE"
+        {/* Body */}
+        {option === 'option1' ? (
+          <Option1View rules={rules} setRules={setRules} refresh={refresh} />
+        ) : (
+          <Option2View rules={rules} setRules={setRules} refresh={refresh} />
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ============================================================================
+// Option 1 — 70/30 panes, prev/next in header, footer with Save Draft + Accept
+// ============================================================================
+
+interface OptionViewProps {
+  rules: Rule[]
+  setRules: (rules: Rule[]) => void
+  refresh: () => Promise<Rule[]>
+}
+
+function Option1View({ rules, setRules, refresh }: OptionViewProps) {
+  const [currentIdx, setCurrentIdx] = useState(0)
+  const [mode, setMode] = useState<Mode>('PREVIEW')
+
+  // Default to first pending rule when rules load.
+  useEffect(() => {
+    if (rules.length === 0) return
+    const firstPending = rules.findIndex(r => r.reviewStatus === 'Pending')
+    setCurrentIdx(firstPending === -1 ? 0 : firstPending)
+  }, [rules.length])
+
+  const current = useMemo(() => rules[currentIdx], [rules, currentIdx])
+  const total = rules.length
+
+  const goPrev = () => {
+    setCurrentIdx(i => Math.max(0, i - 1))
+    setMode('PREVIEW')
+  }
+
+  const goNext = () => {
+    setCurrentIdx(i => Math.min(total - 1, i + 1))
+    setMode('PREVIEW')
+  }
+
+  const handleAcceptAndNext = async () => {
+    if (!current) return
+    await acceptRuleReview(current.id)
+    const all = await refresh()
+    const nextPendingAfter = all.findIndex(
+      (r, i) => i > currentIdx && r.reviewStatus === 'Pending'
+    )
+    const next =
+      nextPendingAfter !== -1
+        ? nextPendingAfter
+        : Math.min(currentIdx + 1, all.length - 1)
+    setCurrentIdx(next)
+    setMode('PREVIEW')
+  }
+
+  const handleSaveDraft = () => {
+    alert('Draft saved.')
+  }
+
+  return (
+    <>
+      {/* Prev/next bar */}
+      <div className="flex items-center justify-end px-8 py-2 flex-shrink-0 bg-white border-b border-gray-100">
+        <div className="flex items-center gap-1">
+          <NavButton label="Previous rule" onClick={goPrev} disabled={currentIdx === 0}>
+            <ChevronLeft size={16} />
+          </NavButton>
+          <span className="px-3 text-sm text-gray-700 min-w-[80px] text-center">
+            {total === 0 ? '—' : `${currentIdx + 1} of ${total}`}
+          </span>
+          <NavButton
+            label="Next rule"
+            onClick={goNext}
+            disabled={currentIdx >= total - 1}
           >
-            <p className="text-sm text-gray-600">
-              Only rules in the <span className="font-semibold text-gray-900">Approved</span>{' '}
-              status will be included in the package.
-            </p>
-            <hr className="-mx-6 mt-6 border-gray-200" />
-            <div className="mt-4 flex items-center justify-between gap-3">
-              <ButtonWidget
-                label="CANCEL"
-                style="OUTLINE"
-                color="ACCENT"
-                onClick={() => setConfirmingExport(false)}
+            <ChevronRight size={16} />
+          </NavButton>
+        </div>
+      </div>
+
+      {/* 70/30 body */}
+      <div className="flex-1 flex overflow-hidden gap-4 px-4 pt-4 pb-0">
+        {current ? (
+          <>
+            <Option1LeftPane rule={current} mode={mode} onModeChange={setMode} />
+            <Option1RightPane rule={current} />
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-gray-500">
+            No rules to review
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="px-8 py-4 border-t border-gray-200 flex items-center justify-between flex-shrink-0 bg-white">
+        <ButtonWidget
+          label="Save Draft"
+          style="OUTLINE"
+          color="ACCENT"
+          size="STANDARD"
+          onClick={handleSaveDraft}
+        />
+        <ButtonWidget
+          label="Accept & Next"
+          style="SOLID"
+          color="ACCENT"
+          size="STANDARD"
+          icon="ChevronRight"
+          iconPosition="END"
+          disabled={!current}
+          onClick={handleAcceptAndNext}
+        />
+      </div>
+    </>
+  )
+  // suppress unused-import warning on setRules in this view; parent re-reads
+  void setRules
+}
+
+interface Option1LeftPaneProps {
+  rule: Rule
+  mode: Mode
+  onModeChange: (m: Mode) => void
+}
+
+function Option1LeftPane(props: Option1LeftPaneProps) {
+  const { rule, mode } = props
+  return (
+    <section className="w-[70%] min-w-0 flex flex-col bg-white border border-gray-200 rounded-md overflow-hidden">
+      <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-gray-900 truncate">{rule.name}</h2>
+            {rule.reviewStatus === 'Accepted' && <AcceptedChip />}
+          </div>
+          <p className="text-xs text-[#6C6C75] mt-0.5">
+            {rule.source} rule · {rule.conditionCount} condition{rule.conditionCount === 1 ? '' : 's'} · {rule.groupCount} group{rule.groupCount === 1 ? '' : 's'}
+          </p>
+        </div>
+        <SegmentedToggle mode={mode} onModeChange={props.onModeChange} />
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-6 py-5">
+        {mode === 'PREVIEW' ? (
+          <ConditionsPreview rule={rule} />
+        ) : (
+          <EditForm rule={rule} showStatus={false} />
+        )}
+      </div>
+    </section>
+  )
+}
+
+function Option1RightPane({ rule }: { rule: Rule }) {
+  const [tab, setTab] = useState<'PRESCRIPTION' | 'CLAUSE'>('PRESCRIPTION')
+
+  useEffect(() => {
+    setTab('PRESCRIPTION')
+  }, [rule.id])
+
+  return (
+    <aside className="w-[30%] min-w-[280px] flex flex-col bg-white border border-gray-200 rounded-md overflow-hidden">
+      <div className="px-4 py-3 border-b border-gray-100 flex-shrink-0">
+        <h3 className="text-base font-bold text-gray-900">{rule.clauseNumber}</h3>
+      </div>
+
+      <div className="flex items-center gap-4 px-4 border-b border-gray-100 flex-shrink-0">
+        <TabButton
+          label="Prescription Text"
+          active={tab === 'PRESCRIPTION'}
+          onClick={() => setTab('PRESCRIPTION')}
+        />
+        <TabButton
+          label="Clause Text"
+          active={tab === 'CLAUSE'}
+          onClick={() => setTab('CLAUSE')}
+        />
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="bg-white border border-gray-200 rounded-md p-3">
+          <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+            {tab === 'PRESCRIPTION' ? rule.prescriptionText : rule.clauseText}
+          </p>
+        </div>
+
+        <CollapsibleClauseList
+          title="Included Clauses"
+          clauses={rule.includedClauseList ?? []}
+        />
+        <CollapsibleClauseList
+          title="Excluded Clauses"
+          clauses={rule.excludedClauseList ?? []}
+        />
+      </div>
+    </aside>
+  )
+}
+
+// ============================================================================
+// Option 2 — left rule list + right detail pane
+// ============================================================================
+
+const RULES_PER_PAGE = 10
+
+function Option2View({ rules, setRules, refresh }: OptionViewProps) {
+  const [currentId, setCurrentId] = useState<number | null>(null)
+  const [mode, setMode] = useState<Mode>('PREVIEW')
+  const [page, setPage] = useState(1)
+
+  useEffect(() => {
+    if (rules.length === 0) return
+    if (currentId == null) {
+      const firstPending = rules.find(r => r.reviewStatus === 'Pending') ?? rules[0]
+      setCurrentId(firstPending?.id ?? null)
+    }
+  }, [rules, currentId])
+
+  const current = useMemo(
+    () => rules.find(r => r.id === currentId),
+    [rules, currentId]
+  )
+
+  const pendingCount = rules.filter(r => r.reviewStatus === 'Pending').length
+  const totalPages = Math.max(1, Math.ceil(rules.length / RULES_PER_PAGE))
+  const pageStart = (page - 1) * RULES_PER_PAGE
+  const pageEnd = Math.min(pageStart + RULES_PER_PAGE, rules.length)
+  const visibleRules = rules.slice(pageStart, pageEnd)
+
+  // When the current rule moves off the current page (e.g. after accepting),
+  // follow it so the user doesn't lose context.
+  useEffect(() => {
+    if (currentId == null) return
+    const idx = rules.findIndex(r => r.id === currentId)
+    if (idx === -1) return
+    const targetPage = Math.floor(idx / RULES_PER_PAGE) + 1
+    if (targetPage !== page) setPage(targetPage)
+  }, [currentId, rules])
+
+  const handleAcceptAndNext = async () => {
+    if (!current) return
+    await acceptRuleReview(current.id)
+    const all = await refresh()
+    const nextPending = all.find(
+      r => r.reviewStatus === 'Pending' && r.id !== current.id
+    )
+    setCurrentId(nextPending?.id ?? current.id)
+    setMode('PREVIEW')
+  }
+
+  const handleSaveDraft = () => {
+    alert('Draft saved.')
+  }
+
+  return (
+    <div className="flex-1 flex overflow-hidden gap-4 p-4">
+      {/* Left: rule list */}
+      <aside className="w-[28%] min-w-[280px] flex flex-col bg-white border border-gray-200 rounded-md overflow-hidden">
+        <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
+          <span className="text-sm font-semibold text-gray-900">
+            Rules ({rules.length})
+          </span>
+          <span className="text-xs text-gray-500">{pendingCount} pending</span>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          {visibleRules.map(rule => (
+            <RuleListItem
+              key={rule.id}
+              rule={rule}
+              isActive={rule.id === currentId}
+              onClick={() => {
+                setCurrentId(rule.id)
+                setMode('PREVIEW')
+              }}
+            />
+          ))}
+        </div>
+        {rules.length > RULES_PER_PAGE && (
+          <div className="flex items-center justify-between px-3 py-2 border-t border-gray-100 text-xs text-gray-600 flex-shrink-0">
+            <span>
+              <span className="font-semibold text-gray-900">
+                {pageStart + 1}–{pageEnd}
+              </span>{' '}
+              of {rules.length}
+            </span>
+            <div className="flex items-center gap-1">
+              <PageControl
+                label="Previous page"
+                disabled={page === 1}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+              >
+                <ChevronLeft size={14} />
+              </PageControl>
+              <span className="px-1.5">
+                {page} / {totalPages}
+              </span>
+              <PageControl
+                label="Next page"
+                disabled={page >= totalPages}
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              >
+                <ChevronRight size={14} />
+              </PageControl>
+            </div>
+          </div>
+        )}
+      </aside>
+
+      {/* Right: detail */}
+      <section className="flex-1 flex flex-col bg-white border border-gray-200 rounded-md overflow-hidden min-w-0">
+        {current ? (
+          <Option2DetailPane
+            rule={current}
+            mode={mode}
+            onModeChange={setMode}
+            onAcceptAndNext={handleAcceptAndNext}
+            onSaveDraft={handleSaveDraft}
+          />
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-gray-500">
+            No rule selected
+          </div>
+        )}
+      </section>
+    </div>
+  )
+  void setRules
+}
+
+function RuleListItem({
+  rule,
+  isActive,
+  onClick,
+}: {
+  rule: Rule
+  isActive: boolean
+  onClick: () => void
+}) {
+  const isAccepted = rule.reviewStatus === 'Accepted'
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full text-left px-4 py-3 border-b border-gray-100 transition-colors ${
+        isActive
+          ? 'bg-blue-50 border-l-4 border-l-[#2322F0] pl-3'
+          : 'hover:bg-gray-50'
+      }`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-semibold text-gray-900 truncate">{rule.name}</div>
+          <div className="text-xs text-[#6C6C75] mt-0.5">
+            {rule.clauseNumber} · {rule.includedClauses} included · {rule.excludedClauses} excluded
+          </div>
+        </div>
+        {isAccepted ? (
+          <span className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium rounded bg-green-100 text-green-700">
+            <Check size={12} strokeWidth={3} />
+            Accepted
+          </span>
+        ) : (
+          <span className="flex-shrink-0 inline-block px-2 py-0.5 text-[11px] font-medium rounded bg-amber-100 text-amber-700">
+            Pending
+          </span>
+        )}
+      </div>
+    </button>
+  )
+}
+
+interface Option2DetailPaneProps {
+  rule: Rule
+  mode: Mode
+  onModeChange: (m: Mode) => void
+  onAcceptAndNext: () => void
+  onSaveDraft: () => void
+}
+
+function Option2DetailPane(props: Option2DetailPaneProps) {
+  const { rule, mode } = props
+  return (
+    <>
+      {/* Header */}
+      <div className="px-6 py-4 border-b border-gray-100 flex items-start justify-between flex-shrink-0">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-gray-900 truncate">{rule.name}</h2>
+            {rule.reviewStatus === 'Accepted' && <AcceptedChip />}
+          </div>
+          <p className="text-xs text-[#6C6C75] mt-0.5">
+            <span className="font-semibold text-gray-900">{rule.clauseNumber}</span> · {rule.source} rule
+          </p>
+        </div>
+        <SegmentedToggle mode={mode} onModeChange={props.onModeChange} />
+      </div>
+
+      {/* Scrollable body */}
+      <div className="flex-1 overflow-y-auto px-6 py-5">
+        {mode === 'PREVIEW' ? (
+          <Option2PreviewBody rule={rule} />
+        ) : (
+          <EditForm rule={rule} />
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between flex-shrink-0 bg-white">
+        <ButtonWidget
+          label="Save Draft"
+          style="OUTLINE"
+          color="ACCENT"
+          size="SMALL"
+          onClick={props.onSaveDraft}
+        />
+        <ButtonWidget
+          label="Accept & Next"
+          style="SOLID"
+          color="ACCENT"
+          size="SMALL"
+          icon="ChevronRight"
+          iconPosition="END"
+          onClick={props.onAcceptAndNext}
+        />
+      </div>
+    </>
+  )
+}
+
+type Option2Tab = 'PRESCRIPTION' | 'CLAUSE' | 'CONDITIONS'
+
+function Option2PreviewBody({ rule }: { rule: Rule }) {
+  const [tab, setTab] = useState<Option2Tab>('PRESCRIPTION')
+
+  // Reset tab when switching to a different rule.
+  useEffect(() => {
+    setTab('PRESCRIPTION')
+  }, [rule.id])
+
+  return (
+    <div>
+      {/* Tabs */}
+      <div className="flex items-center gap-6 border-b border-gray-200 mb-4">
+        <TabButton
+          label="Prescription Text"
+          active={tab === 'PRESCRIPTION'}
+          onClick={() => setTab('PRESCRIPTION')}
+        />
+        <TabButton
+          label="Clause Text"
+          active={tab === 'CLAUSE'}
+          onClick={() => setTab('CLAUSE')}
+        />
+        <TabButton
+          label="Conditions"
+          active={tab === 'CONDITIONS'}
+          onClick={() => setTab('CONDITIONS')}
+        />
+      </div>
+
+      {/* Panel body */}
+      {tab === 'PRESCRIPTION' && (
+        <div className="bg-white border border-gray-200 rounded-md p-4">
+          <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+            {rule.prescriptionText}
+          </p>
+        </div>
+      )}
+
+      {tab === 'CLAUSE' && (
+        <div className="bg-white border border-gray-200 rounded-md p-4">
+          <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+            {rule.clauseText}
+          </p>
+        </div>
+      )}
+
+      {tab === 'CONDITIONS' && (
+        <div className="space-y-4">
+          {rule.conditionGroups && rule.conditionGroups.length > 0 ? (
+            rule.conditionGroups.map((group, gi) => (
+              <div key={gi} className="bg-gray-50 border border-gray-200 rounded p-4">
+                <div className="text-xs font-semibold text-gray-700 mb-3">
+                  Condition Group {gi + 1}
+                </div>
+                <div className="space-y-2">
+                  {group.conditions.map((c, ci) => (
+                    <div key={ci}>
+                      <div className="flex items-center gap-2 text-sm text-gray-800 bg-white border border-gray-200 rounded px-3 py-2">
+                        <span className="font-medium">{c.clauseData}</span>
+                        <span className="text-[#6C6C75]">{c.operator}</span>
+                        <span>{c.value}</span>
+                      </div>
+                      {ci < group.conditions.length - 1 && (
+                        <div className="text-xs font-semibold text-[#6C6C75] py-1 pl-1">
+                          {group.match}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-gray-500">No conditions defined.</p>
+          )}
+
+          <CollapsibleClauseList
+            title="Included Clauses"
+            clauses={rule.includedClauseList ?? []}
+          />
+          <CollapsibleClauseList
+            title="Excluded Clauses"
+            clauses={rule.excludedClauseList ?? []}
+          />
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============================================================================
+// Shared bits (used by both options)
+// ============================================================================
+
+function ConditionsPreview({ rule }: { rule: Rule }) {
+  return (
+    <div className="space-y-5">
+      <div>
+        <h3 className="text-base font-semibold text-gray-900">Conditions</h3>
+        <p className="text-xs text-[#6C6C75] mt-0.5">
+          Clause set data that triggers this rule
+        </p>
+      </div>
+
+      {rule.conditionGroups && rule.conditionGroups.length > 0 ? (
+        rule.conditionGroups.map((group, gi) => (
+          <div key={gi} className="bg-gray-50 border border-gray-200 rounded p-4">
+            <div className="text-xs font-semibold text-gray-700 mb-3">
+              Condition Group {gi + 1}
+            </div>
+            <div className="space-y-2">
+              {group.conditions.map((c, ci) => (
+                <div key={ci}>
+                  <div className="flex items-center gap-2 text-sm text-gray-800 bg-white border border-gray-200 rounded px-3 py-2">
+                    <span className="font-medium">{c.clauseData}</span>
+                    <span className="text-[#6C6C75]">{c.operator}</span>
+                    <span>{c.value}</span>
+                  </div>
+                  {ci < group.conditions.length - 1 && (
+                    <div className="text-xs font-semibold text-[#6C6C75] py-1 pl-1">
+                      {group.match}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))
+      ) : (
+        <p className="text-sm text-gray-500">No conditions defined.</p>
+      )}
+    </div>
+  )
+}
+
+function EditForm({ rule, showStatus = true }: { rule: Rule; showStatus?: boolean }) {
+  const [name, setName] = useState(rule.name)
+  const [status, setStatus] = useState<'Active' | 'Inactive' | 'Draft'>(
+    rule.status === 'Active' ? 'Active' : 'Draft'
+  )
+  const [match, setMatch] = useState<'AND' | 'OR'>(
+    rule.conditionGroups?.[0]?.match ?? 'AND'
+  )
+
+  useEffect(() => {
+    setName(rule.name)
+    setStatus(rule.status === 'Active' ? 'Active' : 'Draft')
+    setMatch(rule.conditionGroups?.[0]?.match ?? 'AND')
+  }, [rule.id, rule.name, rule.status, rule.conditionGroups])
+
+  const firstCondition = rule.conditionGroups?.[0]?.conditions?.[0]
+
+  return (
+    <div className="space-y-5">
+      <div className={showStatus ? 'grid grid-cols-2 gap-6' : ''}>
+        <FormField label="Name" required>
+          <input
+            type="text"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </FormField>
+        {showStatus && (
+          <FormField label="Status" required>
+            <div className="flex items-center gap-6 pt-1.5">
+              <RadioOption
+                label="Active"
+                checked={status === 'Active'}
+                onChange={() => setStatus('Active')}
               />
-              <ButtonWidget
-                label="EXPORT"
-                style="SOLID"
-                color="ACCENT"
-                onClick={() => {
-                  setConfirmingExport(false)
-                  alert(
-                    'Export started (not wired up in this prototype). Only Approved rules would be included.',
-                  )
-                }}
+              <RadioOption
+                label="Inactive"
+                checked={status === 'Inactive'}
+                onChange={() => setStatus('Inactive')}
+              />
+              <RadioOption
+                label="Draft"
+                checked={status === 'Draft'}
+                onChange={() => setStatus('Draft')}
               />
             </div>
-          </DialogField>
+          </FormField>
         )}
-      </main>
+      </div>
+
+      <div>
+        <h3 className="text-base font-semibold text-gray-900">Conditions</h3>
+        <p className="text-xs text-[#6C6C75] mt-0.5">
+          Ensure multiple conditions of the same clause data type aren't pointing to multiple different values
+        </p>
+      </div>
+
+      <div className="bg-gray-50 border border-gray-200 rounded-md p-4 space-y-4">
+        <FormField label="Match" required>
+          <div className="flex items-center gap-6 pt-1">
+            <RadioOption
+              label="All Condition (AND)"
+              checked={match === 'AND'}
+              onChange={() => setMatch('AND')}
+            />
+            <RadioOption
+              label="Any Condition (OR)"
+              checked={match === 'OR'}
+              onChange={() => setMatch('OR')}
+            />
+          </div>
+        </FormField>
+
+        <div className="border-t border-gray-200" />
+
+        {firstCondition?.clauseData === 'Questionnaire Question' ? (
+          <div className="grid grid-cols-1 gap-3">
+            <FormField label="Clause Data" required>
+              <DropdownStub value="Questionnaire Question" />
+            </FormField>
+            <FormField label="Questionnaire" required>
+              <DropdownStub value={firstCondition.questionnaire ?? 'QNM 200 - 16'} />
+            </FormField>
+            <div className="grid grid-cols-3 gap-3">
+              <FormField label="Question" required>
+                <DropdownStub
+                  value={
+                    firstCondition.question ??
+                    'What is the response time for critical incidents?'
+                  }
+                />
+              </FormField>
+              <FormField label="Operator" required>
+                <DropdownStub value={firstCondition.operator} />
+              </FormField>
+              <FormField label="Value" required>
+                <DropdownStub value={firstCondition.value} />
+              </FormField>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-3 items-end">
+            <FormField label="Clause Data" required>
+              <DropdownStub value={firstCondition?.clauseData ?? 'Contract Category'} />
+            </FormField>
+            <FormField label="Operator" required>
+              <DropdownStub value={firstCondition?.operator ?? 'Equals'} />
+            </FormField>
+            <FormField label="Value" required>
+              <DropdownStub value={firstCondition?.value ?? 'New'} />
+            </FormField>
+            <button
+              aria-label="Remove condition"
+              className="h-9 w-9 flex items-center justify-center text-[#2322F0] hover:bg-blue-50 rounded"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        )}
+
+        <button className="inline-flex items-center gap-1.5 text-sm font-medium text-[#2322F0] hover:underline">
+          <Plus size={14} />
+          Add Condition
+        </button>
+      </div>
+
+      {(rule.conditionGroups ?? []).slice(1).map((group, gi) => (
+        <div
+          key={gi}
+          className="bg-gray-50 border border-gray-200 rounded-md p-4 space-y-3"
+        >
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-semibold text-gray-900">
+              Condition Group {gi + 2}
+            </h4>
+            <span className="text-xs text-[#6C6C75]">
+              {group.conditions.length} condition{group.conditions.length === 1 ? '' : 's'} · {group.match}
+            </span>
+          </div>
+          {group.conditions.map((c, ci) => (
+            <div
+              key={ci}
+              className="flex items-center gap-2 text-sm text-gray-800 bg-white border border-gray-200 rounded px-3 py-2"
+            >
+              <span className="font-medium">{c.clauseData}</span>
+              <span className="text-[#6C6C75]">{c.operator}</span>
+              <span className="truncate">{c.value}</span>
+            </div>
+          ))}
+        </div>
+      ))}
+
+      <div className="bg-gray-50 border border-gray-200 rounded-md py-6 flex flex-col items-center">
+        <button className="inline-flex items-center gap-1.5 text-sm font-medium text-[#2322F0] hover:underline">
+          <Plus size={14} />
+          Add Condition Group
+        </button>
+      </div>
     </div>
+  )
+}
+
+function SegmentedToggle({
+  mode,
+  onModeChange,
+}: {
+  mode: Mode
+  onModeChange: (m: Mode) => void
+}) {
+  return (
+    <div className="flex items-center border border-gray-300 rounded overflow-hidden flex-shrink-0">
+      <SegmentButton
+        label="Preview"
+        icon={<Eye size={13} />}
+        active={mode === 'PREVIEW'}
+        onClick={() => onModeChange('PREVIEW')}
+      />
+      <SegmentButton
+        label="Edit"
+        icon={<Pencil size={13} />}
+        active={mode === 'EDIT'}
+        onClick={() => onModeChange('EDIT')}
+      />
+    </div>
+  )
+}
+
+function AcceptedChip() {
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700">
+      <Check size={12} strokeWidth={3} />
+      Accepted
+    </span>
+  )
+}
+
+function CollapsibleClauseList({
+  title,
+  clauses,
+}: {
+  title: string
+  clauses: { number: string; title: string }[]
+}) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="border border-gray-200 rounded-md">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-gray-900 hover:bg-gray-50"
+      >
+        <span>
+          {title} ({clauses.length})
+        </span>
+        <ChevronDown
+          size={16}
+          className={`text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+      {open && (
+        <div className="border-t border-gray-100 divide-y divide-gray-100">
+          {clauses.length === 0 ? (
+            <div className="px-4 py-3 text-sm text-gray-500">None</div>
+          ) : (
+            clauses.map(c => (
+              <div key={c.number} className="px-4 py-2.5">
+                <div className="text-sm font-semibold text-gray-900">{c.number}</div>
+                <div className="text-xs text-[#6C6C75] mt-0.5">{c.title}</div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function TabButton({
+  label,
+  active,
+  onClick,
+}: {
+  label: string
+  active: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+        active
+          ? 'border-[#2322F0] text-[#2322F0]'
+          : 'border-transparent text-gray-500 hover:text-gray-700'
+      }`}
+    >
+      {label}
+    </button>
+  )
+}
+
+function FormField({
+  label,
+  required,
+  children,
+}: {
+  label: string
+  required?: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      {children}
+    </div>
+  )
+}
+
+function RadioOption({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string
+  checked: boolean
+  onChange: () => void
+}) {
+  return (
+    <label className="inline-flex items-center gap-2 cursor-pointer text-sm text-gray-700">
+      <span
+        onClick={onChange}
+        className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+          checked ? 'border-[#2322F0]' : 'border-gray-400'
+        }`}
+      >
+        {checked && <span className="w-2 h-2 rounded-full bg-[#2322F0]" />}
+      </span>
+      {label}
+    </label>
+  )
+}
+
+function SegmentButton({
+  label,
+  icon,
+  active,
+  onClick,
+}: {
+  label: string
+  icon: React.ReactNode
+  active: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-colors ${
+        active
+          ? 'bg-blue-50 text-[#2322F0]'
+          : 'bg-white text-gray-600 hover:bg-gray-50'
+      }`}
+    >
+      {icon}
+      {label}
+    </button>
+  )
+}
+
+function DropdownStub({ value }: { value: string }) {
+  return (
+    <button className="w-full flex items-center justify-between px-3 py-2 text-sm text-gray-800 border border-gray-300 rounded hover:bg-gray-50 bg-white">
+      <span className="truncate">{value}</span>
+      <ChevronDown size={16} className="text-gray-400 flex-shrink-0" />
+    </button>
+  )
+}
+
+function PageControl({
+  label,
+  onClick,
+  disabled,
+  children,
+}: {
+  label: string
+  onClick: () => void
+  disabled?: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      aria-label={label}
+      onClick={onClick}
+      disabled={disabled}
+      className={`flex items-center justify-center w-6 h-6 rounded ${
+        disabled ? 'text-gray-300 cursor-default' : 'text-gray-600 hover:bg-gray-100'
+      }`}
+    >
+      {children}
+    </button>
+  )
+}
+
+function NavButton({
+  label,
+  onClick,
+  disabled,
+  children,
+}: {
+  label: string
+  onClick: () => void
+  disabled?: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      aria-label={label}
+      onClick={onClick}
+      disabled={disabled}
+      className={`flex items-center justify-center w-8 h-8 border border-gray-300 rounded ${
+        disabled
+          ? 'text-gray-300 cursor-not-allowed'
+          : 'text-gray-700 hover:bg-gray-50'
+      }`}
+    >
+      {children}
+    </button>
   )
 }

@@ -58,16 +58,17 @@ async function load(): Promise<RuleApproval[]> {
       name: rule.name,
       status: statusCycle[index % statusCycle.length],
       activeStatus: inactiveRuleIds.has(rule.id) ? 'Inactive' : 'Active',
-      conditions: rule.conditions,
-      conditionGroups: rule.conditionGroups,
+      conditions: rule.conditionCount,
+      conditionGroups: rule.groupCount,
       includedClauses: rule.includedClauses,
       excludedClauses: rule.excludedClauses,
       lastUpdated: rule.lastUpdated,
       createdBy: rule.createdBy,
-      modifiedBy: rule.modifiedBy,
+      // Rule type no longer tracks modifiedBy separately; fall back to the creator.
+      modifiedBy: rule.createdBy,
     }))
   }
-  return ruleApprovals
+  return ruleApprovals as RuleApproval[]
 }
 
 export async function getRuleApprovals(): Promise<RuleApproval[]> {
